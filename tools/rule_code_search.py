@@ -1,27 +1,3 @@
-#!/usr/bin/env python3
-# -*- coding: utf-8 -*-
-"""
-rule_code_search.py
-
-Rule-based Android reverse code search tool.
-
-Reads a local paper / rule catalog, then searches a decompiled Android app tree
-for locations that are *potentially* relevant to each rule. This tool only
-reports locations (file path + line number + matched text). It does NOT judge
-whether a vulnerability exists, does NOT emit confidence / risk / hypothesis
-labels, and does NOT produce a full security report.
-
-Usage (Windows PowerShell):
-    python tools/rule_code_search.py --app-root "C:\\path\\to\\decompiled_app"
-
-Hardcoded paths:
-    Database root: C:\\wujiangliang\\app\\xiangshan\\database_beginner
-    Output base:   C:\\wujiangliang\\app\\search
-    Output dir:    <output base>\\<app-root folder name>
-                   e.g. --app-root C:\\wujiangliang\\app\\bupa
-                        -> C:\\wujiangliang\\app\\search\\bupa
-"""
-
 from __future__ import annotations
 
 import argparse
@@ -33,19 +9,14 @@ from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Dict, Iterable, List, Optional, Tuple
 
-# ---------------------------------------------------------------------------
-# Hardcoded configuration
-# ---------------------------------------------------------------------------
 
 DATABASE_ROOT = Path(r"C:\wujiangliang\app\xiangshan\database_beginner")
 PAPER_CATALOG_FILE = DATABASE_ROOT / "paper_catalog.tsv"
 RULE_CATALOG_FILE = DATABASE_ROOT / "rule_catalog.tsv"
 
 OUTPUT_BASE = Path(r"C:\wujiangliang\app\search")
-# OUTPUT_DIR is computed at runtime as OUTPUT_BASE / <app-root folder name>
-OUTPUT_DIR: Path = OUTPUT_BASE  # placeholder, overwritten in main()
+OUTPUT_DIR: Path = OUTPUT_BASE
 
-# File types to always skip (clear binary formats).
 BINARY_EXTS = {
     ".so", ".png", ".jpg", ".jpeg", ".gif", ".webp", ".bmp", ".ico",
     ".ttf", ".otf", ".woff", ".woff2",
@@ -56,15 +27,12 @@ BINARY_EXTS = {
     ".pyc",
 }
 
-MAX_FILE_SIZE_BYTES = 10 * 1024 * 1024  # 10 MB
+MAX_FILE_SIZE_BYTES = 10 * 1024 * 1024
 
-# Default per-rule hit cap.
 MAX_HITS_PER_RULE_DEFAULT = 80
 
-# Tighter cap for "high-frequency" rules that tend to explode.
 MAX_HITS_PER_RULE_TIGHT = 40
 HIGH_FREQ_RULES = {
-    # Permissions, manifest, logs, SharedPreferences, BLE, URL, health fields
     "BR001", "BR002", "BR003", "BR004", "BR005",
     "BR013", "BR026", "BR027", "BR047", "BR080",
     "BR061", "BR062", "BR063", "BR066",
@@ -72,10 +40,9 @@ HIGH_FREQ_RULES = {
     "BR091", "BR092", "BR093", "BR094",
 }
 
-# matched_text truncation length
 MAX_MATCHED_TEXT_LEN = 300
 
-# Fallback keyword extraction
+
 FALLBACK_STOP_WORDS = {
     "the", "and", "for", "with", "from", "that", "this", "these", "those",
     "where", "which", "when", "been", "have", "having", "should", "would",
@@ -90,9 +57,8 @@ FALLBACK_STOP_WORDS = {
 }
 FALLBACK_MIN_LEN = 5
 FALLBACK_MAX_KEYWORDS = 12
-FALLBACK_MULTI_REQUIRED = 2  # if keywords > 3, require >=2 distinct in same file
+FALLBACK_MULTI_REQUIRED = 2  
 
-# Fallback fields to harvest keywords from
 FALLBACK_FIELDS = [
     "risk_name",
     "where_to_check",
@@ -104,21 +70,11 @@ FALLBACK_FIELDS = [
 ]
 
 
-# ---------------------------------------------------------------------------
-# Rule search specs
-# ---------------------------------------------------------------------------
-#
-# Each spec supports: file_globs, path_any, line_any, line_all, near_any,
-# near_all, file_any, file_all, near_window.
-#
-# All matches are case-insensitive. Patterns are Python regular expressions.
-# ---------------------------------------------------------------------------
 
 JAVA_KT = ["*.java", "*.kt", "*.smali"]
 JAVA_KT_XML = JAVA_KT + ["*.xml"]
 CODE_RES = JAVA_KT + ["*.xml", "*.json", "*.properties", "*.txt", "*.html", "*.js"]
 
-# Sensitive semantic vocab reused across many rules
 SENS_HEALTH = [
     r"heart", r"blood", r"spo2?", r"sleep", r"step", r"temperature", r"temp",
     r"ecg", r"bpm", r"pressure", r"oxygen", r"calorie", r"weight", r"height",
@@ -845,7 +801,6 @@ RULE_SEARCH_SPECS: Dict[str, dict] = {
         "near_window": 10,
     },
 
-    # ---- 11. Privacy policy -----------------------------------------------
 
     "BR050": {  # privacy policy URL present in resources
         "file_globs": ["*.xml", "*.html", "*.txt", "*.md", "*.json"],
@@ -872,9 +827,7 @@ RULE_SEARCH_SPECS: Dict[str, dict] = {
         "near_window": 6,
     },
 
-    # ---- 12. Meta / TODO / FIXME -----------------------------------------
-
-    "BR055": {  # TODO / FIXME around security-relevant code
+    "BR055": {  # around security-relevant code
         "file_globs": JAVA_KT,
         "line_any": [r"\bTODO\b", r"\bFIXME\b", r"\bXXX\b"],
         "near_any": [
@@ -896,8 +849,6 @@ RULE_SEARCH_SPECS: Dict[str, dict] = {
 }
 
 
-# ---------------------------------------------------------------------------
-# IO helpers
 # ---------------------------------------------------------------------------
 
 def load_tsv(path: Path) -> List[Dict[str, str]]:
@@ -939,8 +890,6 @@ def is_probably_binary(path: Path) -> bool:
 
 
 # ---------------------------------------------------------------------------
-# Data classes
-# ---------------------------------------------------------------------------
 
 @dataclass
 class Rule:
@@ -958,9 +907,6 @@ class Hit:
     line_number: int
     matched_text: str
 
-
-# ---------------------------------------------------------------------------
-# Spec compilation
 # ---------------------------------------------------------------------------
 
 def compile_regex_list(patterns: Iterable[str]) -> List[re.Pattern]:
@@ -1029,8 +975,6 @@ def build_fallback_spec(rule: Rule) -> Optional[dict]:
     return spec
 
 
-# ---------------------------------------------------------------------------
-# Matching engine
 # ---------------------------------------------------------------------------
 
 def file_matches_globs(path_rel: str, globs: List[str]) -> bool:
@@ -1114,9 +1058,6 @@ def apply_spec_to_file(
     return hits
 
 
-# ---------------------------------------------------------------------------
-# Orchestration
-# ---------------------------------------------------------------------------
 
 def load_catalogs() -> Tuple[Dict[str, str], List[Rule]]:
     paper_rows = load_tsv(PAPER_CATALOG_FILE)
@@ -1183,7 +1124,6 @@ def scan_app(
 
     files_scanned = 0
 
-    # Pre-map rule -> compiled spec (only rules that have a spec)
     active_rules = [(rid, specs[rid]) for rid in specs]
 
     for path in walk_app_files(app_root):
@@ -1233,9 +1173,6 @@ def scan_app(
     return hits_by_rule, files_scanned
 
 
-# ---------------------------------------------------------------------------
-# Output writers
-# ---------------------------------------------------------------------------
 
 def write_tsv(out_path: Path, rules: List[Rule], hits_by_rule: Dict[str, List[Hit]]) -> int:
     total = 0
@@ -1278,9 +1215,6 @@ def write_no_hit(out_path: Path, rules: List[Rule], hits_by_rule: Dict[str, List
     return len(no_hits)
 
 
-# ---------------------------------------------------------------------------
-# Entrypoint
-# ---------------------------------------------------------------------------
 
 def main(argv: Optional[List[str]] = None) -> int:
     parser = argparse.ArgumentParser(
@@ -1294,27 +1228,21 @@ def main(argv: Optional[List[str]] = None) -> int:
         print(f"[error] --app-root does not exist or is not a directory: {app_root}", file=sys.stderr)
         return 2
 
-    # Output dir = <OUTPUT_BASE> / <app-root folder name>
     global OUTPUT_DIR
     app_dir_name = app_root.resolve().name or "app"
     OUTPUT_DIR = OUTPUT_BASE / app_dir_name
 
-    # Load catalogs
     paper_titles, rules = load_catalogs()
     if not rules:
         print("[error] No rules loaded from rule_catalog.tsv", file=sys.stderr)
         return 3
 
-    # Build specs
     specs = build_specs_for_rules(rules)
 
-    # Ensure output directory exists
     OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
 
-    # Scan
     hits_by_rule, files_scanned = scan_app(app_root, rules, paper_titles, specs)
 
-    # Write outputs
     tsv_path = OUTPUT_DIR / "rule_hits.tsv"
     md_path = OUTPUT_DIR / "rule_hits.md"
     nohit_path = OUTPUT_DIR / "no_hit_rules.txt"
@@ -1324,7 +1252,6 @@ def main(argv: Optional[List[str]] = None) -> int:
     no_hit_count = write_no_hit(nohit_path, rules, hits_by_rule)
     rules_with_hits = sum(1 for r in rules if hits_by_rule.get(r.rule_id))
 
-    # Final console summary (minimal)
     print(f"scanned files: {files_scanned}")
     print(f"total hits: {total_hits}")
     print(f"rules with hits: {rules_with_hits}")
