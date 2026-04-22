@@ -8,7 +8,7 @@ The key difference is that all rules in this database are meant to be used in th
 
 So in short:
 
-- `database/` is the earlier, broader literature collection that I mainly used for independent analysis and manual reasoning.
+- `database_original/` is the earlier, broader literature collection that I mainly used for independent analysis and manual reasoning.
 - `database_main/` is the later, more structured rule database that I use for keyword search, rule-based filtering, and evidence-oriented app review.
 
 Main files:
