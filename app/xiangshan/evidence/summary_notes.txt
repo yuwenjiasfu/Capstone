@@ -1,0 +1,71 @@
+Xiangshan.
+
+1. Local.
+Rules: `rule25`, `rule26`, and `rule28`.
+Status: `confirmed`.
+The strongest local findings stay the same. The compiled UNI business layer defines the local database `smartlink_v1`, and the same business code ties multiple local tables to offline sync endpoints. The table set is broad enough to matter on its own: `user_v2`, `device_v1`, `bodyFatScaleRecords_v5`, `bloodPressure_v1`, `bloodSugar_v1`, `bloodUricAcid_v1`, and `heartRate_v1` all appear in the same local model area. The fields described in the original material are also not generic. They include profile values such as `accountId`, `userId`, `name`, `birthday`, `height`, `weight`, and `bmi`, device values such as `deviceId` and `serialNumber`, and measurement values such as `bodyFat`, `heartRate`, `heightPressure`, and `lowPressure`. That is already enough to keep `rule25` at confirmed.
+
+The account side is also direct rather than inferred. The same compiled file shows a storage map for the login credential entry and the account info entry, and the store logic uses those entries for token persistence and full account persistence. The native side then reads the same token again through `flutter.sp_token`. That is why `rule26` stays confirmed. It is not just a guess from a variable name. The token persistence, account persistence, and native token reuse are all present in the original evidence set.
+
+`rule28` also stays confirmed because the Manifest sets `allowBackup="true"` while the local side already contains token state, account state, health measurements, and device identifiers. The original review was careful not to treat `allowBackup=true` alone as enough. The reason it becomes confirmed here is the combination of backup allowance and already confirmed sensitive local data.
+
+2. Logs.
+Rule: `rule41`.
+Status: `confirmed`.
+The native side logs the token directly in `MainActivity.initData()`. The important part is that this is not an abstract logging concern. The token had already been persisted locally, and then the native activity prints `flutter.sp_token` with `Log.i(...)`. That gives a complete local path from persistence into log output. The original report also noted other log lines such as registration id and deep link query values, but the token line is the part that makes `rule41` clearly confirmed.
+
+3. Transport.
+Rule: `rule06`.
+Status: `confirmed`.
+The transport finding also remains confirmed. The Manifest sets `usesCleartextTraffic="true"`, and the compiled business assets include HTTP business base URLs such as `smartlinkdev.senssun.com`, `10.8.8.128:8524`, and `globaltest.senssun.com`. The original report was careful here too. It did not turn every HTTP string into a production API claim. What it did confirm, and what should stay confirmed, is the cleartext-capable transport surface plus real HTTP business endpoints in the shipped assets. That is enough for `rule06`.
+
+4. Identifiers.
+Rules: `rule02`, `rule03`, `rule14`, and `rule15`.
+Status: `confirmed`.
+The permission and identifier part should stay split exactly the way the original material split it. `rule02` is confirmed because the Manifest declares `READ_PHONE_STATE`, but the checked first-party namespaces do not show a matching first-party telephony read. The main visible consumer is third-party code, not the first-party business logic. `rule03` is confirmed because JPush and Umeng do contain the actual telephony calls. The evidence includes `TelephonyManager.getDeviceId()` and `getSubscriberId()` in third-party namespaces.
+
+`rule14` and `rule15` also stay confirmed because the identifier and device-profile collection surface is direct. The package contains `AD_ID`, and the third-party code reads IMEI, subscriber id, device id, `Build.BRAND`, `Build.MODEL`, locale, display metrics, and device-token style values. The original review kept this careful by separating first-party logic from third-party SDK logic. That separation should stay exactly the same here.
+
+5. Health.
+Rule: `rule18`.
+Status: `confirmed`.
+The app clearly handles a wide health and lifestyle scope. The route table and business assets cover body-fat pages, blood pressure, blood glucose, blood uric acid, heart rate, baby measurement, sports, diet, kitchen, water, device management, and profile data. The local data model also carries the same range of measurement and profile semantics. That is why `rule18` remains confirmed. It is supported by actual pages, actual models, and actual local tables, not just a store description.
+
+6. Entry.
+Rules: `rule32` is `confirmed`. `rule29`, `rule34`, `rule35`, `rule71`, and `rule72` stay `supported_hypothesis`.
+Status: mixed.
+The custom scheme finding should stay narrow. `rule32` is confirmed because the Manifest exposes `MainActivity` as a browsable deep-link entry with scheme `smartlink`, and first-party code reads `getIntent().getData()`. That is enough to confirm the deep-link entry itself.
+
+The later deep-link rules stay below confirmed. The original material showed a real cross-layer flow where the incoming query is copied into an `ext` map, handed to `WxUtils`, and then made available to JS callbacks. That supports `rule29`, `rule34`, `rule35`, `rule71`, and `rule72` as `supported_hypothesis`. At the same time, the original report did not trace that path into one final sensitive sink such as an account action, a cloud write, or a device command. That missing final sink is exactly why those rules should remain below confirmed.
+
+7. Cloud.
+Rules: `rule76` is `confirmed`. `rule77` and `rule82` stay `supported_hypothesis`.
+Status: mixed.
+`rule76` stays confirmed because the local health and device models are not isolated. The compiled table configuration links local tables to concrete offline sync endpoints, and the request layer adds the normal authenticated context for business requests. In other words, the original material did not just show health tables or just show URLs. It showed health tables, API paths, and the shared request layer in one connected chain.
+
+`rule77` stays `supported_hypothesis`, not confirmed. The third-party SDK code clearly collects device identifiers and other device-profile values, and the current privacy-policy pages also admit SDK-side collection. But the original evidence set did not include packet capture or a real third-party payload. That boundary matters and should not be weakened.
+
+`rule82` also stays `supported_hypothesis`. The local model already links account, user, device, and measurement data, and those models have sync paths. What is still missing is a final captured serialized request body that proves all of those values were sent together in one request. The original report kept that difference clear, and this summary should keep it clear too.
+
+8. Components.
+Rules: `rule01`, `rule04`, `rule24`, `rule36`, `rule37`, and `rule48`.
+Status: `supported_hypothesis`.
+These rules were all kept in the original material, but they were kept below confirmed for good reasons. `rule01` and `rule04` come from a wide permission surface and a first-party need that is not always obvious. `READ_PHONE_STATE`, package-query style access, install-related capability, and other broad permissions do exist, but part of that surface may still belong to SDK or update support rather than a clearly unjustified first-party use. So the right level is still `supported_hypothesis`.
+
+`rule24` also stays `supported_hypothesis`. The package exposes the JPush `DownloadProvider` and does not show read or write permission protection on that provider entry, but the checked material did not show a sensitive data read path or a meaningful write-pollution path through it. So it stays on the list, but it does not move up.
+
+`rule36` and `rule37` also stay where they were. `MyApp.onCreate()` calls `UMConfigure.preInit(...)` and initializes the bridge layer before the user-agreement gate completes. At the same time, the app explicitly sets `JCollectionAuth.setAuth(false)` before consent and turns JPush on only after the user-agreement path continues into `uniHome()`. That means the consent and initialization picture is mixed, not one clean confirmed violation. The original report handled that carefully and it should stay that way.
+
+`rule48` stays `supported_hypothesis` because the assets contain dev, test, and prod base URLs, including HTTP values on the dev and test side. That is real deployment surface. What the original report did not do, and what should still not be done, is to turn that into a confirmed production-routing issue without the final environment-control path.
+
+9. BLE.
+Rules: `rule49`, `rule50`, `rule51`, `rule53`, `rule54`, `rule55`, `rule61`, and `rule63`.
+Status: `supported_hypothesis`.
+The BLE section remains one of the strongest suspicion clusters, but it still should not be upgraded past the original level. The code clearly scans for devices, connects with GATT, uses fixed UUIDs, enables notifications, forwards received data into the JS layer, parses measurement-related fields such as `heartRate`, `resistance`, and `timestamp`, and then supports later local storage and sync flows. The command surface is also real. The command helper builds history sync, Wi-Fi configuration, Wi-Fi list, Wi-Fi OTA, and other device-related commands.
+
+That is why these BLE rules remain serious. At the same time, the original review correctly refused to call them confirmed. The visible app path does not show an obvious app-layer MAC, signature, provenance proof, or another strong application-layer authorization check, but there is still no real BLE device run, no BLE sniffer capture, and no successful fake-device or replay test. So the status stays `supported_hypothesis`, exactly as before.
+
+10. Boundary.
+I kept the original boundaries on purpose because they stop the report from drifting into overclaiming. TLS rules `rule09`, `rule10`, and `rule11` stay out because the checked package does not prove a live trust-all path. Content-provider rules `rule21`, `rule22`, and `rule23` stay out, while `rule24` stays below confirmed. Deep-link rules beyond `rule32` stay below confirmed because the current code reaches `ext` and JS callback state, but not one final sensitive sink. Privacy-policy rules `rule43` and `rule44` also stay out because the accessible policy pages already disclose much more than a total-omission case would require.
+
+The runtime-only rules also stay where the original material left them. `rule05`, `rule64`, `rule65`, `rule66`, `rule67`, `rule68`, `rule69`, `rule70`, and `rule74` still need device-side evidence, packet capture, logcat, or real local-data export. I am not moving any of those just to make the report look stronger.

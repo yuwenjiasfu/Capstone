@@ -1,0 +1,41 @@
+BleHealth+.
+
+1. Health.
+Rules: `R006`.
+Status: `confirmed`.
+This is still the clearest confirmed finding in the original material. The BLE path is not just a permission or a device string. `BaseBleActor.connectDevice()` opens the GATT connection, the callback path reaches `BleConnectionService.onCharacteristicChanged(...)`, the service decides device type from the paired MAC mapping, and then the payload is parsed into blood pressure, heart rate, glucose, and weight models. `AppDatabase_Impl` creates `BloodPressureTBL`, `HeartRateTBL`, `GlucoseTbl`, and `WeightScaleTBL`, and those tables hold the measurement values together with `user_id`, `device_mac`, `date_time`, and raw `data`. That is a full capture and persistence chain, so this one should stay confirmed.
+
+2. WebView.
+Rules: `R033` and `R034` are `confirmed`. `R030` and `R035` are `supported_hypothesis`.
+Status: mixed.
+`ShareReportFragment.loadWebView()` builds a `ReportModel`, serializes it with Gson, and injects it into the page with `evaluateJavascript("javascript:loadData('...')", null)`. The injected model carries identity fields such as `name`, `email`, `age`, `gender`, and `profileUrl`, and it also carries health report content such as `deviceType`, `readingData`, chart values, and user settings. `assets/report.html` parses the JSON and writes it into the DOM. That is enough to keep identity and health data entering the WebView JavaScript context as confirmed. At the same time the same page loads remote scripts from Google CDN, Highcharts, and `rawgit.com`, so the possibility that remote script code can read or forward that data stays at `supported_hypothesis`, not confirmed.
+
+3. Backup.
+Rules: `R051`, `R054`, `R057`, `R059`, and `R060`.
+Status: `supported_hypothesis`.
+The backup chain is strong, but the original report was careful not to overstate it, and I am keeping that boundary. `BackUpFragment` checkpoints the full Room database, passes the DB file into `AESCipher.encrypt(...)`, writes `ble_health_backup.bkup` under `externalCacheDir`, and uploads it to Google Drive. The implementation uses `AESCipher.IV_STRING = "BlupixelHealthPl"` and `Cipher.getInstance("AES")`, so the code shows a hardcoded secret and weak-looking protection around a complete health database. That is enough to say the design is risky and that full health records can leave the device through the backup path. It is still not enough to say a real user backup was extracted or decrypted in this evidence set.
+
+4. Components.
+Rules: `R017`, `R018`, `R019`, and `R020`.
+Status: `supported_hypothesis`.
+The component surface is real. `BleScanService` is exported, has no custom permission, and starts scanning without caller validation. Scan results are then sent out by ordinary broadcast with MAC address, `BluetoothDevice`, and parsed device type. The original report also kept `ReminderReceiver` inside the same component-hardening discussion because it is exported and processes incoming action and reminder data before broadcasting the reminder event again. The reason these rules stay below confirmed is the same as before: there is no outside-app PoC, no adb trigger log, and no runtime proof of what another app can actually do with those exposed paths on a real device.
+
+5. Logs.
+Rule: `R050`.
+Status: `supported_hypothesis`.
+`ApiController.getHttpClient()` enables `HttpLoggingInterceptor.Level.BODY`, and the Retrofit layer covers login, registration, OTP, profile, subscription, and image upload APIs. That is enough to keep the logging issue on the list. The original files also made an important correction that I want to preserve: `AppLog` is not real evidence because the implementation is empty, so it should not be used as proof of runtime leakage. With no logcat or file log sample, the right conclusion stays `supported_hypothesis`.
+
+6. SDKs.
+Rules: `R002`, `R041`, and `R065`.
+Status: `supported_hypothesis`.
+The Manifest registers Firebase Messaging, Analytics, Crashlytics, Installations, DataTransport, and `FirebaseInitProvider`. `LaunchActivity.onResume()` also fetches an FCM token and stores it locally. That is enough to confirm there is a third-party telemetry surface in a health app. It is not enough to say health values or report data were really sent to Firebase, so I am keeping the original `supported_hypothesis` level.
+
+7. BLE app layer.
+Rules: `R073`, `R074`, `R077`, `R078`, `R079`, `R080`, `R081`, `R082`, and `R084`.
+Status: `supported_hypothesis`.
+The BLE code uses `BluetoothDevice.connectGatt(...)`, enables characteristic notifications and indications, and reads or writes characteristics by UUID. `BleConnectionService` then turns the bytes into health models and stores them. In the visible client code I did not see HMAC, signature, challenge response, per-session keying, device certificate checks, or replay protection around the measurement path. That is the right static basis for a strong hypothesis about missing app-layer protection. It is still not a confirmed exploit because there is no real device, no BLE sniffer capture, and no successful malicious read or write in the current materials.
+
+8. Boundaries.
+Rules: many of `R021-R024`, `R025-R028`, `R049`, `R053`, `R066`, `R070`, and `R085-R096`.
+Status: mostly `not_supported` or `not_testable`.
+The original report was careful on the exclusions, and those exclusions should stay visible. I did not keep a custom TrustManager or HostnameVerifier finding because the first-party code does not show one. I did not keep a confirmed HTTP health transport finding because the visible first-party API base is HTTPS. I did not turn Firebase presence into confirmed third-party health sharing, and I did not turn BLE permissions into a confirmed BLE exploit. That restraint is part of why the original logic was sound.

@@ -1,0 +1,118 @@
+1. TLS.
+Related rules: `BR009`, `BR010`, and `BR012` are `confirmed`. `BR091` and `BR095` stay `supported_hypothesis`.
+Files:
+`app\bruhealth\sources\egnc\moh\base\net\SSLSocketClient.java`
+`app\bruhealth\sources\egnc\moh\base\web\manager\health\OkHttpUtils.java`
+`app\bruhealth\sources\egnc\moh\base\web\manager\health\StepsUploader.java`
+`app\bruhealth\sources\egnc\moh\bruhealth\activity\HealthActivity.java`
+`app\bruhealth\sources\egnc\moh\base\web\manager\health\UploadNode.java`
+Chain:
+The strongest chain starts in `HealthActivity`, where the app reads step data and then calls `StepsUploader.upload(...)`. `UploadNode` holds the payload fields such as `startTime`, `endTime`, `steps`, `calories`, `realSteps`, and `realCalories`. `StepsUploader` then builds an HTTP request that includes `wlapp-token`, `device-id`, app version, and build id headers. The client it uses comes from `OkHttpUtils.buildDefaultOkClient()`, and `OkHttpUtils.setSafe(...)` installs `SSLSocketClient.getSSLSocketFactory()`, `SSLSocketClient.newX505TrustManager()`, and `SSLSocketClient.getHostnameVerifier()`. In `SSLSocketClient`, the `checkServerTrusted(...)` methods are empty, and the `HostnameVerifier` returns true. That is the code-level reason the original report kept the trust-all TLS finding confirmed.
+Limits:
+There is still no MITM run and no captured request. The confirmed part is the insecure client implementation and the reachable upload chain, not a completed live interception.
+
+2. Hostname.
+Related rules: `BR010` and `BR012` are `confirmed`. `BR091` and `BR095` stay `supported_hypothesis`.
+Files:
+`app\bruhealth\sources\egnc\moh\base\net\EvydHostnameVerifier.java`
+`app\bruhealth\sources\egnc\moh\base\net\ApiClient.java`
+`app\bruhealth\sources\egnc\moh\base\config\EvydEnvironment.java`
+`app\bruhealth\sources\com\evyd\core\mobile\android\health\net\HealthAPI.java`
+Chain:
+The main `ApiClient` path is different from `StepsUploader`, and the original source review explicitly said not to merge them. `EvydEnvironment` defines the base hosts for product, preview, and UAT. `ApiClient` builds the default client and installs `new EvydHostnameVerifier()`. Inside `EvydHostnameVerifier`, verification starts from `true`, and the base host branch returns true without delegating to the default hostname verifier. `HealthAPI` then exposes real health upload endpoints such as routine data upload, track report upload, and route screenshot upload through that client family.
+Limits:
+This is a weaker TLS failure than the `StepsUploader` path because it is about hostname verification logic, not an explicit trust-all certificate chain. The report should not overstate it as universal acceptance of any self-signed certificate.
+
+3. Logs.
+Related rules: `BR047` is `confirmed`. `BR080` and `BR081` stay `not_testable`. `BR091` stays `supported_hypothesis`.
+Files:
+`app\bruhealth\sources\egnc\moh\base\config\WorkInitialization.java`
+`app\bruhealth\sources\egnc\moh\base\config\EvydEnvWrapper.java`
+`app\bruhealth\sources\com\evyd\log\EvydLog.java`
+`app\bruhealth\sources\egnc\moh\base\net\ApiClient.java`
+`app\bruhealth\sources\egnc\moh\base\net\HeaderInterceptor.java`
+`app\bruhealth\sources\com\evyd\core\mobile\android\health\track\TrackUploadManager.java`
+`app\bruhealth\sources\com\evyd\core\mobile\android\health\newtrack\NewTrackUploadManager.java`
+`app\bruhealth\sources\com\evyd\core\mobile\android\health\track\UploadData.java`
+`app\bruhealth\sources\com\evyd\core\mobile\android\health\track\TrackLocationManager.java`
+Chain:
+The logging problem is not a single print statement. `ApiClient` configures `HttpLoggingInterceptor.Level.BODY`, and ordinary JSON bodies are not meaningfully scrubbed. `HeaderInterceptor` adds sensitive headers such as `wlapp-token`, `device-id`, `old-device-id`, `device-name`, and `tid`. `TrackUploadManager` and `NewTrackUploadManager` build upload payloads that include route and activity data, and the code logs those parameter objects. `UploadData` holds location lists, and `TrackLocationManager.onLocationChanged(...)` records coordinates. That makes the sink side confirmed.
+The source review then adds an important runtime boundary. `WorkInitialization` and `EvydEnvWrapper.isProd()` mean the file logging branch is not as simple as the first draft said. `EvydLog.initLogUtilsForProd()` enables file logging, but the current branch logic does not let me safely say product devices definitely wrote those values to files.
+Limits:
+No logcat, no extracted log directory, and no runtime environment check were present. The correct statement is that sensitive data enters logging code, not that production log files were already proven.
+
+4. Tokens.
+Related rules: `BR026` is `confirmed`. `BR047` overlaps.
+Files:
+`app\bruhealth\sources\egnc\moh\base\config\Constants.java`
+`app\bruhealth\sources\egnc\moh\base\account\model\Model.java`
+`app\bruhealth\sources\egnc\moh\base\account\AccountManager.java`
+`app\bruhealth\sources\egnc\moh\base\net\HeaderInterceptor.java`
+`app\bruhealth\sources\egnc\moh\base\net\cookie\PersistentCookieStore.java`
+`app\bruhealth\sources\egnc\moh\base\net\cookie\CookieInterceptor.java`
+Chain:
+The token path is direct. `Constants.USER_TOKEN` defines the key. `Model.UserData.save(...)` writes `wlappToken` into `SPUtils`. `AccountManager.getTokenString()` reads it back. `HeaderInterceptor` adds that token to the `wlapp-token` request header. The cookie path is also direct. `PersistentCookieStore` opens `CookiePrefsFile` through `getSharedPreferences(..., 0)`, serializes cookies with Java serialization, converts them to hex, and stores the result as strings. `CookieInterceptor` also logs cookie handling and mirrors cookies into WebView `CookieManager`.
+Limits:
+There is no real preference dump in the current materials, so the report should not pretend to show live token values. The confirmed part is the storage design and the request-header use.
+
+5. Database.
+Related rules: `BR025` is `confirmed`.
+Files:
+`app\bruhealth\sources\egnc\moh\base\config\Constants.java`
+`app\bruhealth\sources\egnc\moh\base\database\DBHelper.java`
+`app\bruhealth\sources\egnc\moh\base\database\AppDatabase_Impl.java`
+`app\bruhealth\sources\egnc\moh\base\database\login\LoginRecordDao_Impl.java`
+`app\bruhealth\sources\egnc\moh\base\database\login\UserInfo.java`
+Chain:
+`Constants.DATABASE` expands into the app cache database name. `DBHelper` builds the database through plain `Room.databaseBuilder(...)` and does not show SQLCipher, a support factory, or a custom encryption layer. `AppDatabase_Impl` creates `user_info`, and the table includes `user_id`, `member_id`, `c_s`, `id_no`, `id_type`, `face_link`, `nick_name`, `phone_no`, `region_code`, `last_login_time`, and `is_owner`. `LoginRecordDao_Impl` inserts, updates, and queries that table, and `UserInfo` exposes the matching model fields such as id number, mobile number, member id, user id, and profile picture link. That is enough to keep the local identity database finding confirmed.
+Limits:
+There is no device-side DB extraction, so the note should stay at the code and schema level.
+
+6. Deep link.
+Related rules: `BR032` is `confirmed`. `BR034` and `BR035` are `supported_hypothesis`. `BR083` stays `not_testable`.
+Files:
+`app\bruhealth\resources\AndroidManifest.xml`
+`app\bruhealth\sources\egnc\moh\bruhealth\nativeLib\activities\DeepLinkActivity.java`
+`app\bruhealth\sources\egnc\moh\bruhealth\nativeLib\utils\SchemeOpenManager.java`
+`app\bruhealth\sources\egnc\moh\base\utils\deeplink\NativeDeepLinkManager.java`
+`app\bruhealth\sources\egnc\moh\base\utils\deeplink\WebDeepLinkManager.java`
+`app\bruhealth\sources\egnc\moh\bruhealth\scheme\SchemeInit.java`
+`app\bruhealth\sources\egnc\moh\base\web\manager\CallMethodManager.java`
+Chain:
+The external entry is `DeepLinkActivity`, which is exported, browsable, and registered for the `bruhealth` scheme. `DeepLinkActivity.onCreate(...)` passes the intent to `SchemeOpenManager`. `SchemeOpenManager` queues the request, checks login state, and when the app is in the right state it reads `getSchemeIntent().getData()`. If the host or path contains `jump` and the query contains `url=`, it strips out the inner URL and tries either `DeepLinkFactory.createDeepLink(...)` or `Router.getInstance().handle(...)`. `NativeDeepLinkManager` takes query parameters and injects them into ARouter postcards. `WebDeepLinkManager` can open `PAGE_BASE_WEB` and pass `Constants.WEB_LOAD_URL`. `SchemeInit` registers handlers for `http://`, `https://`, `evydbh://open/external`, `evydbh://cordova`, and a long list of health, auth, permission, photo, picker, IM, and TRTC routes.
+The bridge risk comes from `CallMethodManager`. `GET_APP_TOKEN` returns `AccountManager.getInstance().getTokenString()`, and `USER_INFO` returns user data. That is why the original material treated the chain as high priority even though it stopped short of a confirmed exploit.
+Limits:
+No actual intent was sent from outside, no bridge call was reproduced, and no proof exists that an untrusted URL can reach the exact WebView instance with that bridge.
+
+7. Health.
+Related rules: `BR018` and `BR019` are `confirmed`. `BR091`, `BR094`, `BR095`, and `BR097` stay `supported_hypothesis`.
+Files:
+`app\bruhealth\resources\AndroidManifest.xml`
+`app\bruhealth\resources\assets\flutter_assets\config\url.json`
+`app\bruhealth\sources\com\evyd\core\mobile\android\health\model\ActivityData.java`
+`app\bruhealth\sources\com\evyd\core\mobile\android\health\model\DailyData.java`
+`app\bruhealth\sources\com\evyd\core\mobile\android\health\model\SleepData.java`
+`app\bruhealth\sources\com\evyd\core\mobile\android\health\model\CurrentLocation.java`
+`app\bruhealth\sources\com\evyd\core\mobile\android\health\net\HealthAPI.java`
+`app\bruhealth\sources\com\evyd\core\mobile\android\health\track\UploadData.java`
+`app\bruhealth\sources\com\bruhealth\glucometer\model\GlucoseItemModel.java`
+`app\bruhealth\sources\com\bruhealth\glucometer\GlucometerNativeUtils.java`
+Chain:
+The Manifest shows the health surface clearly: Health Connect permissions for steps, calories, heart rate, weight, sleep, speed, exercise, and distance, plus fine, coarse, and background location, plus BLE scan and connect. Flutter route config adds medical reminder, digital warfarin, PHR, and health card endpoints. Native models hold step counts, distance, calories, heart rate, sleep details, and current location coordinates. `HealthAPI` exposes upload paths for routine data, route reports, and route screenshots. `UploadData.getUploadLocation()` returns longitude, latitude, and timestamp values. On the glucometer side, `GlucoseItemModel` holds glucose time and value, and `GlucometerNativeUtils` passes real-time and historical glucose JSON into Flutter events.
+That is enough to keep the health and medication-related data domains confirmed. The cloud or transmission rules still stay one step lower because I do not have captured requests, runtime screenshots, or server-side confirmation that ties the full field set to a real network session.
+Limits:
+No packet capture, no server logs, and no full runtime payloads were present.
+
+8. BLE.
+Related rules: `BR061-BR068` stay `supported_hypothesis`. `BR069-BR070` and `BR074-BR075` stay `not_testable`.
+Main points:
+The original evidence set kept a real BLE blood glucose chain in scope, but it also kept the exploit claims below confirmed. The Manifest declares BLE permissions, the glucometer business module exists, and the evidence chain traces scan, connect, notify or write behavior, and Flutter callbacks for glucose data. That is enough to say the BLE health path exists and deserves follow-up. It is not enough to say application-layer authorization definitely fails or that a malicious local app definitely read or injected glucose values.
+Limits:
+No real blood glucose device, no GATT capture, no replay, and no attack app test exist in the current materials.
+
+9. Boundaries.
+Main points:
+The source review explicitly says not to claim confirmed third-party sharing, confirmed product file logging, confirmed token leakage from WebView, or confirmed BLE exploitation.
+`CommonWebView` geolocation auto-grant, bridge exposure, exported Compose preview activity, and the typoed Bluetooth permission remain independent engineering findings, not forced rule conclusions.
+Those boundaries are part of the original logic, so I am keeping them visible instead of rewriting the report into something stronger than the code supports.
+

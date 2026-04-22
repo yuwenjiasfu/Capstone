@@ -1,0 +1,46 @@
+Nutrack.
+
+1. Transport.
+Rules: BR006.
+Status: confirmed.
+The Manifest level cleartext setting is one of the strongest confirmed items here. `app\nutrack\resources\ar.com.vesta.nutrack.apk\AndroidManifest.xml:61` sets `android:usesCleartextTraffic="true"`. That part is direct. It does not need runtime proof. The original review also kept the business boundary clear. The default main business domain in `strings.xml:32` is HTTPS. So the confirmed part is the weak policy. It is not a claim that normal production sync is already using HTTP. The same files also mention MQTT example defaults that are plain `tcp://`. That matters as a leftover risk. But the report was right not to turn the MQTT example into a confirmed core business endpoint problem. So BR006 stays confirmed. The stronger plaintext data leak story stays below confirmed.
+
+2. Keys.
+Rules: BR016.
+Status: confirmed.
+This one is also an artifact level confirmed item. The package contains extractable API keys and project configuration. The beginner report points to Manifest lines 184 to 186. It also points to `strings.xml:116,121,124,120,122-123,340`. That is enough to say the APK exposes service configuration values. It is not enough to say any server secret was broken. It is not enough to say the Google or Firebase side can be abused. The original material kept that boundary. I am keeping it too.
+
+3. License.
+Rules: BR017.
+Status: confirmed.
+The license decryption path is very explicit in this app. `app\nutrack\sources\Support\Encrypter.java:15-16` defines a fixed IV and fixed AES key. The same file at `:19-23` uses `AES/CBC/PKCS5PADDING`. `app\nutrack\sources\MainActivity.java:1044-1049` reads `NutrackLicense`, decrypts it, and extracts `lic_uuid`. There is no need to infer the crypto behavior from naming. The constants and the use site are both visible. So this stays confirmed. The careful limit is the same as the original files. This does not automatically mean the whole transport layer is broken. It confirms a hardcoded client side crypto design issue.
+
+4. Identity.
+Rules: BR014.
+Status: confirmed.
+This app really does read Android ID and place it into first party paths. `app\nutrack\sources\MainActivity.java:1042` reads `android_id`. The report says the same activity also sends it into Crashlytics custom key logic. `app\nutrack\sources\NutrackDbHttp.java:600` reads `android_id` again. The same file at `:670` adds it as `dev_id` in the `SYNC.php` query string. The same file at `:690,694` builds the POST request and adds Bearer authorization. That is enough to keep BR014 as confirmed. The confirmed part is the first party use of Android ID. I am not stretching it into a broader device fingerprinting story than the code shows.
+
+5. Storage.
+Rules: BR025, BR026, BR028.
+Status: confirmed.
+This app has one of the clearest local storage chains in the set. `app\nutrack\sources\NutrackDbHelper.java:24,85` creates ordinary `Nutrack.db` with `SQLiteOpenHelper`. `NutrackDbHelper.java:186` has the `usuarios` table with username and password fields. `NutrackDbHelper.java:188` has device Bluetooth and Wi-Fi address fields in `implementos`. `NutrackDbHelper.java:196` has geolocation fields in `corrales`. `NutrackDbHelper.java:210-222` includes production, task, and feeding tables. The preference side is also clear. `app\nutrack\resources\res\values\strings.xml:313-315,320,322` defines keys for domain, username, password, license, and Bluetooth address. `app\nutrack\resources\ar.com.vesta.nutrack.apk\res\xml\settings.xml:13,21,28,104` exposes them as preferences. The app also keeps `allowBackup=true`. `app\nutrack\resources\ar.com.vesta.nutrack.apk\AndroidManifest.xml:58` shows that. No exclusion rules were found to remove DB or preference content from backup. That is why BR025, BR026, and BR028 all stay confirmed together.
+
+6. Protocol.
+Rules: BR066, BR067, BR068, BR069, BR074, BR075.
+Status: supported_hypothesis.
+This is the part that is easy to exaggerate if I am careless. The original review handled it correctly. The app mainly uses classic Bluetooth RFCOMM SPP and Wi-Fi TCP sockets. It does not show a first party BLE GATT implementation in the material. So I should not call this a confirmed BLE GATT vulnerability. Still, the protocol surface is real. `app\nutrack\sources\Support\Bluetooth.java:7-8` fixes the classic SPP UUID and the Wi-Fi port 5373. `BluetoothClient.java:54` uses insecure RFCOMM. `BluetoothServer.java:45` uses insecure RFCOMM listen. `WiFiClient.java:35,54` and `WiFiServer.java:28,61` use ordinary sockets. `ProtoFeedMsg.java:92-115,139-143` uses only unkeyed MD5 integrity. `ProtoFeed.java:314-350,520-576` sends `STX + JSON + ETX` frames. `Balanza.java:195,202-207,213` writes control commands such as `:L`, `:M`, and `:N`. That is enough for a strong adjacent protocol hypothesis. It is still not enough for a confirmed exploit finding.
+
+7. Cloud.
+Rules: BR091, BR092, BR094, BR095.
+Status: supported_hypothesis.
+The sync chain is visible enough to keep. `app\nutrack\sources\NutrackDbOP.java:161-181` serializes changed business tables after a version point. `app\nutrack\sources\NutrackDbHttp.java:670,687-690,694` posts the JSON to `SYNC.php`. That request also carries `dev_id=android_id` and Bearer authorization. The local tables already contain account, device, route, feeding, and location style content. So the hypothesis that identity, business context, device context, and location context reach the first party sync endpoint is reasonable. Crashlytics is similar. The first party code writes `usuario`, `android_id`, `cuenta`, and `licencia` into Crashlytics custom keys. The report still kept BR092 below confirmed because there is no live packet capture. That is the right level. BR095 also stays supported_hypothesis. The reason is simple. The app allows cleartext, and the backend domain is user editable. If a user sets an `http://` domain, the sync path could move into plaintext. The code supports that risk. The original material still did not call it confirmed plaintext leak, and I agree with that limit.
+
+8. Boundaries.
+Rules: BR009, BR010, BR011, BR013, BR021-BR024 not_supported.
+Status: cleared.
+I want these exclusions left in place. They stop the report from drifting. The original review did not find a first party trust all TLS client. So BR009, BR010, and BR011 should stay out. The default business endpoint is HTTPS. So BR013 should also stay out as a confirmed item. The provider side also did not close. `NutrackProvider` is not exposed in a way that supports a direct leak claim. Another important boundary is subject matter. The app is agricultural and livestock oriented. I should not force medication privacy logic onto `prescripciones` as if this were a clinical prescription app. That would change the meaning of the original material. So I am keeping that boundary explicit.
+
+9. Notes.
+Rules: independent only.
+Status: separate.
+There are still two extra things worth keeping in mind. The MQTT example activity uses plaintext defaults. The exported location foreground service is also real. But the original final review kept them outside the rule catalog claims. The MQTT path is not confirmed as a production reachable business feature. The location service does not satisfy the exact BR030 sync or device command condition. So I am not merging those into the rule summary.

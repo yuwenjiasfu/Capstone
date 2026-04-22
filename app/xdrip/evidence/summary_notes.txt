@@ -1,0 +1,41 @@
+xDrip.
+
+1. TLS.
+Rules: BR009, BR010.
+Status: confirmed.
+This is one of the clearest static TLS failures in the set. It is first party code. It is not a third party example class. `app\xdrip\sources\com\eveningoutpost\dexdrip\sharemodels\ShareRest.java:98` has an empty `checkServerTrusted(...)`. The same file at `:140-143` uses a `HostnameVerifier` that always returns true. The same client is used against Dexcom Share HTTPS. `ShareRest.java:174-176` performs authentication and session operations. `ShareRest.java:204-208` uploads BG records. So the weak TLS configuration is directly on a real credential and health data path. That is enough to keep BR009 and BR010 confirmed. There is no need to weaken those two.
+
+2. Logs.
+Rules: BR047 confirmed, BR095 supported_hypothesis.
+Status: mixed.
+`ShareRest.java:120` logs request bodies. `ShareRest.java:128` logs response bodies. The same class also reads Dexcom account name and password and then performs auth and upload operations. That is enough to keep BR047 confirmed. The cloud framing still stays slightly lower. The weak cloud path is clearly there. But BR095 is a cloud risk rule, so the original report kept it as supported_hypothesis without runtime traffic. That is a sensible split. The TLS bug itself is confirmed. The real cloud leakage observation still needs a live session.
+
+3. Storage.
+Rules: BR026 and BR027.
+Status: confirmed.
+This app keeps a lot of sensitive state in ordinary local files. `app\xdrip\sources\com\eveningoutpost\dexdrip\utilitymodels\PersistentStore.java:43` uses ordinary SharedPreferences. `BluetoothScan.java:309,327,486,515` writes share key, last connected address, receiver serial, and transmitter id. `ShareRest.java:260` writes Dexcom session id. `AuthFlowOut.java:55` writes Tidepool AuthState JSON. `MiBand.java:127` writes MiBand auth key. That already closes BR026. Then the export side closes BR027. `SdcardImportExport.java:32` starts from the internal preferences XML. `SdcardImportExport.java:186-187` targets public Downloads `xDrip-export`. `SdcardImportExport.java:205-208,372-389` copies the file out without encryption or filtering. `strings.xml:636` even warns that the export may contain sensitive information and may be readable by other apps. So BR026 and BR027 both stay confirmed.
+
+4. DB.
+Rules: BR025 and BR017.
+Status: confirmed.
+The database side is also very clear. `BgReading.java:66` defines `BgReadings`. That model includes calculated, filtered, raw, sensor, source, and timestamp fields. `Treatments.java` includes carbs, insulin, notes, and `insulinJSON`. `BloodTest.java` includes blood test values and timestamps. `Sensor.java:30-32` includes sensor location. The migration files in `assets\migrations\23.sql`, `26.sql`, `31.sql`, `37.sql`, and `38.sql` back up the same storage story. The backup crypto issue is separate but also confirmed. `app\xdrip\sources\com\eveningoutpost\dexdrip\cloud\backup\Backup.java:621` uses `AES/CBC/PKCS5Padding`. The same file at `:623` hardcodes AES key `5861bdb93f5ba8effa43c8ff7f26c3be`. That is enough to keep BR017 confirmed. The fixed backup key is not the same issue as the health DB. Both should stay in the summary because both are strong static findings.
+
+5. HTTP.
+Rules: BR006 and BR012.
+Status: confirmed.
+The transport policy here is not a single bug. It is a combination of cleartext allowance and inconsistent client behavior. `app\xdrip\resources\AndroidManifest.xml:139` sets `android:usesCleartextTraffic="true"`. `DesertComms.java` can build LAN sync URLs with either `http://` or `https://`. `WixelReader.java` and `ParakeetHelper.java` accept `http://.../json.get` style sources. The app also has multiple very different client patterns. Dexcom Share uses trust all TLS and body logging. Tidepool uses a different stack. Desert sync has its own logic. The local web service can run HTTP and HTTPS side by side. That is why BR012 stays confirmed and not just BR006. The inconsistency itself is part of the finding.
+
+6. Components.
+Rules: BR030, BR031, BR021, BR024, BR032, BR035 supported_hypothesis. BR033 and BR034 not_supported.
+Status: mixed.
+The exported component set here is real, but not every sink is fully closed. `app\xdrip\resources\AndroidManifest.xml:358-360` exposes `SyncService`. `SyncService.java:19-21,25,32` shows it can enter upload logic if cloud or wear settings are enabled. `AndroidManifest.xml:318-319` exposes `ExternalStatusBroadcastReceiver`. `ExternalStatusBroadcastReceiver.java:14-16` accepts external status and starts a service. `ExternalStatusService.java:63-64,69-73,79` writes state and creates `APStatus`. `AndroidManifest.xml:191-193` exposes `InfoContentProvider`. The query logic there is incomplete in decompilation, so the provider finding stays lower. The Tidepool callback side is similar. The Manifest exposes `net.openid.appauth.RedirectUriReceiverActivity` for `xdrip://callback/tidepool`. `AuthFlowOut.java:113-114` uses AppAuth with PKCE `S256`. That is why BR032 and BR035 can stay as supported_hypothesis, but BR033 and BR034 should stay out. The callback is sensitive. The protective AppAuth and PKCE logic is also visible. So I should not overstate it.
+
+7. BLE and cloud.
+Rules: BR091, BR095, BR096 supported_hypothesis, plus BLE write and identity rules stay supported_hypothesis.
+Status: supported_hypothesis.
+The static chain is strong. `BluetoothScan.java:73-78,217-245,342-421` keeps advertisement bytes and identifies devices by address, name, and advertisement content. `DexCollectionService.java:144-168` hardcodes multiple service and characteristic UUIDs. The same file at `:1209-1233` writes characteristics. At `:1511,1519,1545,1562` it turns transmitter bytes into `BgReading.create(...)`. `UploadChunk.java:51-56` includes Treatments, BloodTests, and BgReadings. `TidepoolUploader.java:54,212` uploads those chunks. `ShareRest.java:204-208` uploads Dexcom Share BG records. That is enough for a strong cloud path hypothesis. The reason it stays below confirmed is still the same. The final uploader path is not fully decompiled in all cases. There is no full live packet capture. There is no real device replay or injection result in the material I used. So the static chain is strong, but the cloud and BLE attack rules stay supported_hypothesis.
+
+8. Boundaries.
+Rules: BR028 not_supported, BR042 and BR072 not_supported, BR097 not_supported.
+Status: cleared.
+Backup is not the issue in this app. The Manifest has `allowBackup=false`. So BR028 stays out. The app also does not support the third party BLE scan upload rules. The scan logic is first party and device focused, not ad SDK based. So BR042 and BR072 stay out. The app is also not a pulse oximeter app. So BR097 should stay out too. Keeping these removals visible matters, because the real finding list is already large enough without forcing extra categories.

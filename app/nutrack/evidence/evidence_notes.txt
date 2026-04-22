@@ -1,0 +1,103 @@
+1. Transport.
+Related rules: BR006.
+Status: confirmed.
+Files:
+`app\nutrack\resources\ar.com.vesta.nutrack.apk\AndroidManifest.xml:61`
+`app\nutrack\resources\res\values\strings.xml:32`
+`app\nutrack\resources\res\values\strings.xml:197-200`
+`app\nutrack\resources\ar.com.vesta.nutrack.apk\res\xml\settings.xml:13`
+`app\nutrack\sources\MQTT\PahoExampleActivity.java:32`
+`app\nutrack\sources\MQTT\PahoExampleActivity.java:59-62`
+Chain:
+The first transport fact is at the Manifest level. `usesCleartextTraffic=true` is visible directly in the package. That alone is enough to confirm BR006. The report then checked whether this should be promoted into a confirmed plaintext sync claim. The answer stayed no. `strings.xml:32` still shows the default main business domain as HTTPS. So the main sync path is not statically proven to be plaintext by default. The next step is the editable domain path. `settings.xml:13` exposes the backend domain as a user editable preference. That means the app can operate with user controlled server configuration. The next separate path is the MQTT example. `PahoExampleActivity.java:32` uses `tcp://10.0.0.138:1884`. `strings.xml:197-200` uses `tcp://iot.eclipse.org:1883`. `PahoExampleActivity.java:59-62` reads MQTT host, port, user, and password from preferences. This proves that plaintext messaging defaults still exist in the package. It does not prove the example activity is a production reachable business path. That is why the final review kept the MQTT point outside the core rule claim.
+Limits:
+No packet capture of `SYNC.php` over HTTP was shown. No production MQTT use was shown. No business health or feeding payload was shown on the wire in plaintext.
+
+2. License and identity.
+Related rules: BR017, BR014, BR092.
+Status: mixed.
+Files:
+`app\nutrack\sources\Support\Encrypter.java:15-16`
+`app\nutrack\sources\Support\Encrypter.java:19-23`
+`app\nutrack\sources\MainActivity.java:769`
+`app\nutrack\sources\MainActivity.java:1042`
+`app\nutrack\sources\MainActivity.java:1044-1049`
+`app\nutrack\sources\NutrackDbHttp.java:600`
+`app\nutrack\sources\NutrackDbHttp.java:670`
+`app\nutrack\sources\NutrackDbHttp.java:690`
+`app\nutrack\sources\NutrackDbHttp.java:694`
+Chain:
+`Encrypter.java:15-16` defines a fixed IV and a fixed AES key. `Encrypter.java:19-23` uses them in `AES/CBC/PKCS5PADDING`. That closes BR017 by itself. The app then uses that path in the real license flow. `MainActivity.java:1044-1049` reads `NutrackLicense`, decrypts it, and extracts `lic_uuid`. That means the hardcoded crypto is not dead code. The identity side starts at `MainActivity.java:1042`. The beginner audit says this line reads `android_id`. The same path also writes identifiers into Crashlytics custom keys. The report lists `usuario` at line 769. It lists `android_id` at line 1042. It lists `cuenta` and `licencia` at lines 1048-1049. The sync side then reads Android ID again. `NutrackDbHttp.java:600` gets `android_id`. `NutrackDbHttp.java:670` builds `SYNC.php` and includes `dev_id`. `NutrackDbHttp.java:690` builds the sync POST. `NutrackDbHttp.java:694` adds `Authorization: Bearer ...`. This is why BR014 is confirmed. First party code reads Android ID. First party code inserts it into a first party sync request path. First party code also inserts it into Crashlytics custom key logic. BR092 stays lower than confirmed. The code shows the custom keys. It does not show a captured outgoing Crashlytics request carrying those fields.
+Limits:
+No runtime capture of Crashlytics payloads was provided. No statement about server side acceptance of the license UUID is needed. BR017 and BR014 are confirmed without those extra steps.
+
+3. Storage.
+Related rules: BR025, BR026, BR028.
+Status: confirmed.
+Files:
+`app\nutrack\sources\NutrackDbHelper.java:24`
+`app\nutrack\sources\NutrackDbHelper.java:85`
+`app\nutrack\sources\NutrackDbHelper.java:186`
+`app\nutrack\sources\NutrackDbHelper.java:188`
+`app\nutrack\sources\NutrackDbHelper.java:196`
+`app\nutrack\sources\NutrackDbHelper.java:198`
+`app\nutrack\sources\NutrackDbHelper.java:210`
+`app\nutrack\sources\NutrackDbHelper.java:212`
+`app\nutrack\sources\NutrackDbHelper.java:214`
+`app\nutrack\sources\NutrackDbHelper.java:222`
+`app\nutrack\resources\res\values\strings.xml:313-315,320,322`
+`app\nutrack\resources\ar.com.vesta.nutrack.apk\res\xml\settings.xml:13,21,28,104`
+`app\nutrack\sources\n0\C1148B.java:43,47`
+`app\nutrack\resources\ar.com.vesta.nutrack.apk\AndroidManifest.xml:58`
+Chain:
+`NutrackDbHelper.java:24` extends `SQLiteOpenHelper`. `NutrackDbHelper.java:85` names the database `Nutrack.db`. So the base store is ordinary SQLite. `usuarios` at line 186 contains username and password fields. `implementos` at line 188 contains Bluetooth and Wi-Fi address fields. `corrales` at line 196 contains latitude and longitude fields. `com_lec` at line 198 contains fence, state, action, time, and observation style records. `prescripciones` at line 210 contains production prescription information. `prescripciones_det` at line 212 contains feeding amount and status details. `ots` at line 214 contains work order level fields. `ot_det_ronda` at line 222 contains user id, device id, feeding amount, and start and end coordinates. That closes the database side. The preference side closes separately. `strings.xml:313-315,320,322` defines keys for domain, user, password, license, and Bluetooth address. `settings.xml:13,21,28,104` surfaces those preferences. `n0\C1148B.java:43,47` uses ordinary `getSharedPreferences(package + "_preferences", 0)`. The backup point then adds a second confirmed issue. `AndroidManifest.xml:58` sets `allowBackup=true`. The beginner report says no exclusion rules were found for database or preference content. This is why BR025, BR026, and BR028 are all confirmed together.
+Limits:
+No device extraction is needed for confirmation because the code already defines the storage paths. Dynamic residual data after logout was not tested.
+
+4. Sync.
+Related rules: BR091, BR094, BR095.
+Status: supported_hypothesis.
+Files:
+`app\nutrack\sources\NutrackDbOP.java:161-181`
+`app\nutrack\sources\NutrackDbHttp.java:670`
+`app\nutrack\sources\NutrackDbHttp.java:687-690`
+`app\nutrack\sources\NutrackDbHttp.java:694`
+`app\nutrack\evidence\nutrack_evidence_chain_zh.md:82-97`
+Chain:
+The local business tables are version tracked. `NutrackDbOP.java:161-181` collects changes after a given version point. Those changes are serialized into sync JSON. `NutrackDbHttp.java:670` then builds the `SYNC.php` request. The query parameters include `ot_desde`, `pr_desde`, `lec_desde`, and `dev_id`. The same evidence line states `dev_id` is Android ID. `NutrackDbHttp.java:690` uses the sync JSON as the POST body. `NutrackDbHttp.java:694` adds Bearer authorization. The local tables already contain account, device, route, feeding, and location fields. That makes the combined business and identity context plausible inside one sync call. The final review still keeps this below confirmed. The missing piece is actual runtime payload capture. BR095 also stays lower than confirmed for the same reason. The weak policy exists. The sync path exists. But no live run showed an actual `http://` sync request.
+Limits:
+No real server response was captured. No full sync JSON was captured on the wire. The supported level is based on the closed static chain, not on a live observation.
+
+5. Protocol.
+Related rules: BR066, BR067, BR068, BR069, BR074, BR075.
+Status: supported_hypothesis.
+Files:
+`app\nutrack\sources\Support\Bluetooth.java:7-8`
+`app\nutrack\sources\Support\BluetoothClient.java:54`
+`app\nutrack\sources\Support\BluetoothServer.java:45`
+`app\nutrack\sources\Support\WiFiClient.java:35,54`
+`app\nutrack\sources\Support\WiFiServer.java:28,61`
+`app\nutrack\sources\Support\ProtoFeedMsg.java:18-26`
+`app\nutrack\sources\Support\ProtoFeedMsg.java:92-115`
+`app\nutrack\sources\Support\ProtoFeedMsg.java:139-143`
+`app\nutrack\sources\Support\ProtoFeedMsg.java:210`
+`app\nutrack\sources\Support\ProtoFeed.java:98-130`
+`app\nutrack\sources\Support\ProtoFeed.java:314-350,520-576`
+`app\nutrack\sources\Balanza.java:195,202-207,213`
+Chain:
+`Bluetooth.java:7` fixes the classic SPP UUID. `Bluetooth.java:8` fixes Wi-Fi port 5373. `BluetoothClient.java:54` uses `createInsecureRfcommSocketToServiceRecord(...)`. `BluetoothServer.java:45` uses `listenUsingInsecureRfcommWithServiceRecord(...)`. `WiFiClient.java:35,54` uses ordinary sockets. `WiFiServer.java:28,61` uses ordinary server sockets. `ProtoFeedMsg.java:18-26` defines command types such as `WHO`, `DOING_OT`, `WEIGHT`, `NEXT`, `FINISHING_OT`, and `PAUSE`. `ProtoFeedMsg.java:92-115` computes only an MD5 digest over JSON. That MD5 input has no secret key. So it is an integrity check at best, not a real authentication code. `ProtoFeedMsg.java:139-143` stores the MD5 before send. `ProtoFeedMsg.java:210` uses ordinary `Random` for the message code. `ProtoFeed.java:98-130` receives `STX/ETX` framed JSON and accepts it if the hash passes. `ProtoFeed.java:314-350,520-576` writes the same JSON framing over Bluetooth and Wi-Fi. `Balanza.java:195,202-207,213` builds and writes device control commands. The protocol surface is therefore concrete. The reason this still stays below confirmed is platform fit and dynamic proof. These are classic Bluetooth and Wi-Fi paths. The original report explicitly says they are adjacent to BLE paper logic, not direct BLE GATT findings. No device test or forged message replay was provided.
+Limits:
+No successful unauthorized command write was shown. No business state change from a forged message was shown. The report should keep calling this an adjacent protocol risk, not a confirmed BLE exploit.
+
+6. Boundaries.
+Related rules: BR009, BR010, BR011, BR013, BR021-BR024, BR030.
+Status: cleared.
+Notes:
+No first party trust all TLS client was closed in the review. So BR009, BR010, and BR011 stay out. The default business domain is HTTPS. So BR013 stays out as a confirmed finding. `NutrackProvider` was not confirmed as an exposed provider leak. So BR021 to BR024 stay out. `LocationUpdatesService` is exported and worth noting. `AndroidManifest.xml:85-88` shows that. `LocationUpdatesService.java:151` starts foreground work. `LocationUpdatesService.java:218-223` requests location updates. But the final review still moved it out of BR030. The reason is exact rule fit. BR030 is about sync, upload, or device command style external triggering. The location service did not close that specific chain. This is a good example of where the report stayed stricter than a quick summary would.
+
+7. Notes.
+Related rules: independent only.
+Status: separate.
+Notes:
+The MQTT example remains useful for later dynamic checking. `PahoExampleActivity.java:32` and `strings.xml:197-200` are enough to revisit it later. But it stays outside the confirmed core rule set for now. That preserves the logic of the original material.
+

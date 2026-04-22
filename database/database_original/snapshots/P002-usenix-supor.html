@@ -1,0 +1,959 @@
+<!DOCTYPE html>
+<!--[if lt IE 7 ]>              <html  lang="en" dir="ltr" prefix="og: http://ogp.me/ns#" class="no-js ie6"> <![endif]-->
+<!--[if IE 7 ]>                 <html  lang="en" dir="ltr" prefix="og: http://ogp.me/ns#" class="no-js ie7"> <![endif]-->
+<!--[if IE 8 ]>                 <html  lang="en" dir="ltr" prefix="og: http://ogp.me/ns#" class="no-js ie8"> <![endif]-->
+<!--[if (gte IE 9)|!(IE)]><!-->
+
+<html  lang="en" dir="ltr" prefix="og: http://ogp.me/ns#" class="no-js">
+<!--<![endif]-->
+
+  <head>
+    <meta charset="utf-8" />
+<link rel="shortcut icon" href="https://www.usenix.org/themes/motherboard/favicon.ico" type="image/vnd.microsoft.icon" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<meta name="citation_title" content="{SUPOR}: Precise and Scalable Sensitive User Input Detection for Android Apps" />
+<meta name="citation_author" content="Jianjun Huang" />
+<meta name="citation_author_institution" content="Purdue University" />
+<meta name="citation_author_email" content="huang427@cs.purdue.edu" />
+<meta name="citation_author" content="Zhichun Li" />
+<meta name="citation_author_institution" content="NEC Labs America" />
+<meta name="citation_author_email" content="zhichun@nec-labs.com" />
+<meta name="citation_author" content="Xusheng Xiao" />
+<meta name="citation_author_institution" content="NEC Labs America" />
+<meta name="citation_author_email" content="xsxiao@nec-labs.com" />
+<meta name="citation_author" content="Zhenyu Wu" />
+<meta name="citation_author_institution" content="NEC Labs America" />
+<meta name="citation_author_email" content="adamwu@nec-labs.com" />
+<meta name="citation_author" content="Kangjie Lu" />
+<meta name="citation_author_institution" content="Georgia Institute of Technology" />
+<meta name="citation_author_email" content="kjlu@gatech.edu" />
+<meta name="citation_author" content="Xiangyu Zhang" />
+<meta name="citation_author_institution" content="Purdue University" />
+<meta name="citation_author_email" content="xyzhang@cs.purdue.edu" />
+<meta name="citation_author" content="Guofei Jiang" />
+<meta name="citation_author_institution" content="NEC Labs America" />
+<meta name="citation_author_email" content="gfj@nec-labs.com" />
+<meta name="citation_publication_date" content="2015" />
+<meta name="citation_conference_title" content="24th USENIX Security Symposium (USENIX Security 15)" />
+<meta name="citation_firstpage" content="977" />
+<meta name="citation_lastpage" content="992" />
+<meta name="citation_isbn" content="978-1-939133-11-3" />
+<meta name="citation_pdf_url" content="https://www.usenix.org/system/files/conference/usenixsecurity15/sec15-paper-huang.pdf" />
+<!--
+	<link rel="image_src" href="https://www.usenix.org/sites/default/files/cset15_button_cfp_125_41715.png" />
+	<meta property="og:image" content="https://www.usenix.org/sites/default/files/cset15_button_cfp_125_41715.png" />
+	<meta property="og:image:secure_url" content="https://www.usenix.org/sites/default/files/cset15_button_cfp_125_41715.png" />
+	<link rel="image_src" href="https://www.usenix.org/sites/default/files/sec15_button_125.png" />
+	<meta property="og:image" content="https://www.usenix.org/sites/default/files/sec15_button_125.png" />
+	<meta property="og:image:secure_url" content="https://www.usenix.org/sites/default/files/sec15_button_125.png" />
+-->
+    <!-- TODO: add the following meta tags to $head via theme_settings -->
+    <!-- Always force latest IE rendering engine (even in intranet) & Chrome Frame 
+       Remove this if you use the .htaccess -->
+    <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1"><!--  Mobile viewport optimized: j.mp/bplateviewport -->
+    <!-- <meta name="viewport" content="width=device-width, initial-scale=1.0"> -->
+	<title>SUPOR: Precise and Scalable Sensitive User Input Detection for Android Apps | USENIX</title>
+    <style media="all">
+@import url("https://www.usenix.org/core/misc/normalize.css?td9vs1");
+@import url("https://www.usenix.org/core/modules/system/css/system.theme.css?td9vs1");
+@import url("https://www.usenix.org/core/modules/system/css/messages.theme.css?td9vs1");
+</style>
+<style media="all">
+@import url("https://www.usenix.org/modules/custom/usenix_blocks/libraries/mmenu/dist/mmenu.css?td9vs1");
+@import url("https://www.usenix.org/modules/contrib/views_slideshow/views_slideshow.css?td9vs1");
+</style>
+<style media="all">
+@import url("https://www.usenix.org/modules/contrib/back_to_top/css/back_to_top.css?td9vs1");
+@import url("https://www.usenix.org/core/modules/comment/css/comment.css?td9vs1");
+@import url("https://www.usenix.org/core/modules/date/css/date.css?td9vs1");
+@import url("https://www.usenix.org/core/modules/field/css/field.css?td9vs1");
+@import url("https://www.usenix.org/modules/contrib/og/css/og.css?td9vs1");
+@import url("https://www.usenix.org/modules/contrib/paragraphs/css/paragraphs.css?td9vs1");
+@import url("https://www.usenix.org/modules/custom/usenix_conference/css/timezone-picker.css?td9vs1");
+@import url("https://www.usenix.org/modules/custom/usenix_logo_preview/css/usenix_logo_preview.css?td9vs1");
+@import url("https://www.usenix.org/core/modules/user/css/user.css?td9vs1");
+@import url("https://www.usenix.org/modules/contrib/workflow/workflow_admin_ui/workflow_admin_ui.css?td9vs1");
+@import url("https://www.usenix.org/modules/contrib/rules/rules.css?td9vs1");
+</style>
+<style media="all">#backtotop{bottom:20px;right:20px;}
+</style>
+<style media="all">
+@import url("https://www.usenix.org/modules/contrib/geshifilter/geshifilter.css?td9vs1");
+@import url("https://www.usenix.org/modules/custom/biblio/biblio.css?td9vs1");
+@import url("https://www.usenix.org/core/modules/system/css/menu-dropdown.theme.breakpoint.css?td9vs1");
+</style>
+<style media="all and (min-width: 60em)">
+@import url("https://www.usenix.org/core/modules/system/css/menu-dropdown.theme.breakpoint-queries.css?td9vs1");
+</style>
+<style media="all">
+@import url("https://www.usenix.org/core/modules/system/css/menu-toggle.theme.breakpoint.css?td9vs1");
+</style>
+<style media="all and (min-width: 60em)">
+@import url("https://www.usenix.org/core/modules/system/css/menu-toggle.theme.breakpoint-queries.css?td9vs1");
+</style>
+<style media="all">
+@import url("https://www.usenix.org/modules/custom/usenix_blocks/css/mobile-menu.css?td9vs1");
+@import url("https://www.usenix.org/modules/contrib/nice_menus/css/nice_menus.css?td9vs1");
+@import url("https://www.usenix.org/modules/contrib/nice_menus/css/nice_menus_default.css?td9vs1");
+@import url("https://www.usenix.org/modules/contrib/views_slideshow/contrib/views_slideshow_cycle/views_slideshow_cycle.css?td9vs1");
+</style>
+<style media="all">
+@import url("https://www.usenix.org/themes/waves/css/screen.css?td9vs1");
+@import url("https://www.usenix.org/themes/usenix_conference_base/css/conference_base.css?td9vs1");
+@import url("https://www.usenix.org/themes/modern_security/css/conference.css?td9vs1");
+@import url("https://www.usenix.org/themes/usenix_conference_base/css/usenix_conference_base.css?td9vs1");
+@import url("https://www.usenix.org/themes/usenix_conference_base/css/menu-dropdown.css?td9vs1");
+@import url("https://www.usenix.org/themes/modern_security/css/nice_menus_white.css?td9vs1");
+</style>
+<style media="screen">
+@import url("https://www.usenix.org/themes/tao/drupal.css?td9vs1");
+</style>
+    <link href="/themes/waves/css/ie.css" media="screen, projection" rel="stylesheet" type="text/css">
+    <script>window.Backdrop = {settings: {"basePath":"\/","pathPrefix":"","drupalCompatibility":true,"ajaxPageState":{"theme":"modern_security","theme_token":"_9v0pDMjVJ9GO6GvJkilSCmJqFHRuwTSY163Ris0gnk","css":{"core\/misc\/normalize.css":1,"core\/modules\/system\/css\/system.css":1,"core\/modules\/system\/css\/system.theme.css":1,"core\/modules\/system\/css\/messages.theme.css":1,"modules\/custom\/usenix_blocks\/libraries\/mmenu\/dist\/mmenu.css":1,"modules\/contrib\/views_slideshow\/views_slideshow.css":1,"modules\/contrib\/back_to_top\/css\/back_to_top.css":1,"core\/modules\/comment\/css\/comment.css":1,"core\/modules\/date\/css\/date.css":1,"core\/modules\/field\/css\/field.css":1,"modules\/contrib\/og\/css\/og.css":1,"modules\/contrib\/paragraphs\/css\/paragraphs.css":1,"core\/modules\/search\/search.theme.css":1,"modules\/custom\/usenix_conference\/css\/timezone-picker.css":1,"modules\/custom\/usenix_logo_preview\/css\/usenix_logo_preview.css":1,"core\/modules\/user\/css\/user.css":1,"modules\/contrib\/workflow\/workflow_admin_ui\/workflow_admin_ui.css":1,"core\/modules\/views\/css\/views.css":1,"modules\/contrib\/rules\/rules.css":1,"0":1,"modules\/contrib\/geshifilter\/geshifilter.css":1,"modules\/custom\/biblio\/biblio.css":1,"layouts\/usenix_conference_base\/usenix-conference-base.css":1,"core\/modules\/system\/css\/menu-dropdown.theme.breakpoint.css":1,"core\/modules\/system\/css\/menu-dropdown.theme.breakpoint-queries.css":1,"core\/modules\/system\/css\/menu-toggle.theme.breakpoint.css":1,"core\/modules\/system\/css\/menu-toggle.theme.breakpoint-queries.css":1,"modules\/custom\/usenix_blocks\/css\/mobile-menu.css":1,"modules\/contrib\/nice_menus\/css\/nice_menus.css":1,"modules\/contrib\/nice_menus\/css\/nice_menus_default.css":1,"modules\/contrib\/views_slideshow\/contrib\/views_slideshow_cycle\/views_slideshow_cycle.css":1,"themes\/tao\/reset.css":1,"themes\/tao\/base.css":1,"themes\/waves\/css\/screen.css":1,"themes\/waves\/system.css":1,"themes\/waves\/views.css":1,"themes\/usenix_conference_base\/css\/conference_base.css":1,"themes\/modern_security\/css\/conference.css":1,"themes\/usenix_conference_base\/css\/usenix_conference_base.css":1,"themes\/usenix_conference_base\/css\/menu-dropdown.css":1,"themes\/modern_security\/css\/nice_menus_white.css":1,"themes\/tao\/drupal.css":1,"themes\/waves\/core.css":1,"themes\/waves\/icons.css":1,"themes\/waves\/style.css":1,"themes\/waves\/reset.css":1,"themes\/waves\/base.css":1,"themes\/waves\/print.css":1},"js":{"public:\/\/google_tag\/google_tag.script.js":1,"modules\/contrib\/jquery_update\/replace\/jquery\/1.12\/jquery.min.js":1,"core\/misc\/jquery.once.js":1,"core\/misc\/backdrop.js":1,"modules\/contrib\/behavior_weights\/js\/behavior_weights.js":1,"modules\/contrib\/jquery_update\/js\/jquery_browser.js":1,"modules\/contrib\/beautytips\/js\/jquery.bt.min.js":1,"modules\/contrib\/beautytips\/js\/beautytips.js":1,"modules\/custom\/usenix_blocks\/libraries\/mmenu\/dist\/mmenu.js":1,"modules\/contrib\/views_slideshow\/js\/views_slideshow.js":1,"modules\/contrib\/views_slideshow\/contrib\/views_slideshow_cycle\/libraries\/jquery.cycle\/jquery.cycle.all.js":1,"modules\/contrib\/back_to_top\/js\/back_to_top.js":1,"modules\/contrib\/views_slideshow\/contrib\/views_slideshow_cycle\/js\/formoptions.js":1,"themes\/waves\/js\/search.js":1,"themes\/waves\/js\/modernizr-1.6.min.js":1,"themes\/waves\/js\/usenix.js":1,"modules\/contrib\/beautytips\/other_libs\/jquery.hoverIntent.minified.js":1,"modules\/contrib\/field_group\/js\/field_group.js":1,"modules\/contrib\/field_group\/js\/field_groups.js":1,"modules\/custom\/usenix_media\/swf_assets\/swfobject\/swfobject.js":1,"modules\/custom\/usenix_media\/swf_assets\/audio-player\/audio-player.js":1,"modules\/custom\/usenix_media\/js\/usenix_audio.js":1,"core\/modules\/system\/js\/menus.js":1,"modules\/custom\/usenix_blocks\/js\/mobile-menu.js":1,"modules\/contrib\/views_slideshow\/contrib\/views_slideshow_cycle\/js\/views_slideshow_cycle.js":1,"themes\/rubik\/js\/rubik.js":1}},"back_to_top":{"distance":"100","text":"Back to top","title":1,"type":"image","disable_mobile":0},"beautytipStyles":{"default":[],"plain":[],"netflix":{"positions":["right","left"],"fill":"#FFF","padding":5,"shadow":true,"shadowBlur":12,"strokeStyle":"#B9090B","spikeLength":50,"spikeGirth":20,"cornerRadius":10,"centerPointY":0.1,"overlap":-8,"cssStyles":{"fontSize":"12px","fontFamily":"arial,helvetica,sans-serif"}},"facebook":{"fill":"#F7F7F7","padding":8,"strokeStyle":"#B7B7B7","cornerRadius":0,"cssStyles":{"fontFamily":"\u0022lucida grande\u0022,tahoma,verdana,arial,sans-serif","fontSize":"11px"}},"transparent":{"fill":"rgba(0, 0, 0, .8)","padding":20,"strokeStyle":"#CC0","strokeWidth":3,"spikeLength":40,"spikeGirth":40,"cornerRadius":40,"cssStyles":{"color":"#FFF","fontWeight":"bold"}},"big-green":{"fill":"#00FF4E","padding":20,"strokeWidth":0,"spikeLength":40,"spikeGirth":40,"cornerRadius":15,"cssStyles":{"fontFamily":"\u0022lucida grande\u0022,tahoma,verdana,arial,sans-serif","fontSize":"14px"}},"google-maps":{"positions":["top","bottom"],"fill":"#FFF","padding":15,"strokeStyle":"#ABABAB","strokeWidth":1,"spikeLength":65,"spikeGirth":40,"cornerRadius":25,"centerPointX":0.9,"cssStyles":{"fontSize":"12px","fontFamily":"arial,helvetica,sans-serif"}},"hulu":{"fill":"#F4F4F4","strokeStyle":"#666666","spikeLength":20,"spikeGirth":10,"width":350,"overlap":0,"centerPointY":1,"cornerRadius":0,"cssStyles":{"fontFamily":"\u0022Lucida Grande\u0022,Helvetica,Arial,Verdana,sans-serif","fontSize":"12px","padding":"10px 14px"},"shadow":true,"shadowColor":"rgba(0,0,0,.5)","shadowBlur":8,"shadowOffsetX":4,"shadowOffsetY":4}},"beautytips":{".beautytips":{"cssSelect":".beautytips","style":null}},"viewsSlideshow":{"sponsor_slideshow-block_1":{"methods":{"goToSlide":["viewsSlideshowPager","viewsSlideshowSlideCounter","viewsSlideshowCycle"],"nextSlide":["viewsSlideshowPager","viewsSlideshowSlideCounter","viewsSlideshowCycle"],"pause":["viewsSlideshowControls","viewsSlideshowCycle"],"play":["viewsSlideshowControls","viewsSlideshowCycle"],"previousSlide":["viewsSlideshowPager","viewsSlideshowSlideCounter","viewsSlideshowCycle"],"transitionBegin":["viewsSlideshowPager","viewsSlideshowSlideCounter"],"transitionEnd":[]},"paused":0}},"viewsSlideshowCycle":{"#views_slideshow_cycle_main_sponsor_slideshow-block_1":{"num_divs":21,"id_prefix":"#views_slideshow_cycle_main_","div_prefix":"#views_slideshow_cycle_div_","vss_id":"sponsor_slideshow-block_1","effect":"fade","transition_advanced":0,"timeout":5000,"speed":700,"delay":0,"sync":1,"random":0,"pause":1,"pause_on_click":0,"action_advanced":1,"start_paused":0,"remember_slide":0,"remember_slide_days":1,"pause_in_middle":0,"pause_when_hidden":0,"pause_when_hidden_type":"full","amount_allowed_visible":"","nowrap":0,"fixed_height":1,"items_per_slide":1,"wait_for_image_load":0,"wait_for_image_load_timeout":3000,"cleartype":0,"cleartypenobg":0,"advanced_options":"{}"}},"field_group":{"div":"full"},"usenix_media":{"pathToSWFAudioPlayer":"https:\/\/www.usenix.org\/modules\/custom\/usenix_media\/swf_assets\/audio-player\/player.swf","supportsAudio":"unset","audio":[{"uniqueDIV":"usenix-media-audio-1","mp3AudioUrl":"https:\/\/2459d6dc103cb5933875-c0245c5c937c5dedcca3f1764ecc9b2f.ssl.cf2.rackcdn.com\/sec15\/huang.mp3","oggAudioUrl":""}]}}};</script>
+<script defer="defer" src="https://www.usenix.org/sites/default/files/google_tag/google_tag.script.js?td9vs1"></script>
+<script src="https://www.usenix.org/modules/contrib/jquery_update/replace/jquery/1.12/jquery.min.js?td9vs1"></script>
+<script src="https://www.usenix.org/core/misc/jquery.once.js?v=1.2.6"></script>
+<script src="https://www.usenix.org/core/misc/backdrop.js?v=1.30.2"></script>
+<script src="https://www.usenix.org/modules/contrib/behavior_weights/js/behavior_weights.js?v=1.x-1.0"></script>
+<script src="https://www.usenix.org/modules/contrib/jquery_update/js/jquery_browser.js?v=0.0.1"></script>
+<script src="https://www.usenix.org/modules/contrib/beautytips/js/jquery.bt.min.js?v=0.9.5-rc1"></script>
+<script src="https://www.usenix.org/modules/contrib/beautytips/js/beautytips.js?v=1.x-2.x"></script>
+<script src="https://www.usenix.org/modules/custom/usenix_blocks/libraries/mmenu/dist/mmenu.js?v=8.4.3"></script>
+<script src="https://www.usenix.org/modules/contrib/views_slideshow/js/views_slideshow.js?v=1.0"></script>
+<script src="https://www.usenix.org/modules/contrib/views_slideshow/contrib/views_slideshow_cycle/libraries/jquery.cycle/jquery.cycle.all.js?v=3.0.3"></script>
+<script src="https://www.usenix.org/modules/contrib/back_to_top/js/back_to_top.js?td9vs1"></script>
+<script src="https://www.usenix.org/modules/contrib/views_slideshow/contrib/views_slideshow_cycle/js/formoptions.js?td9vs1"></script>
+<script src="https://www.usenix.org/themes/waves/js/search.js?td9vs1"></script>
+<script src="https://www.usenix.org/themes/waves/js/modernizr-1.6.min.js?td9vs1"></script>
+<script src="https://www.usenix.org/themes/waves/js/usenix.js?td9vs1"></script>
+<script src="https://www.usenix.org/modules/contrib/beautytips/other_libs/jquery.hoverIntent.minified.js?td9vs1"></script>
+<script src="https://www.usenix.org/modules/contrib/field_group/js/field_group.js?td9vs1"></script>
+<script src="https://www.usenix.org/modules/contrib/field_group/js/field_groups.js?td9vs1"></script>
+<script></script>
+<script></script>
+<script></script>
+<script src="https://www.usenix.org/core/modules/system/js/menus.js?v=1.30.2"></script>
+<script src="https://www.usenix.org/modules/custom/usenix_blocks/js/mobile-menu.js?td9vs1"></script>
+<script src="https://www.usenix.org/modules/contrib/views_slideshow/contrib/views_slideshow_cycle/js/views_slideshow_cycle.js?td9vs1"></script>
+<script src="https://www.usenix.org/themes/rubik/js/rubik.js?td9vs1"></script>
+          </head>
+
+  <body class="page node-type-paper __default user-is-non-member page-node page-conference-usenixsecurity15-technical-sessions-presentation-huang not-front sidebar-left" >
+    <div id="skip-link">
+        <a href="#main-content" class="element-invisible element-focusable">Skip to main content</a>
+    </div>
+    
+<!-- start conference nav -->
+
+<div id='top-outer'>
+  <div id='top' class='limiter'>
+    <div id='top-inner'>
+      <div class="top-left">
+        <a href="/" id="site-logo" class="site-logo back-to-usenix">
+          Back to USENIX        </a>
+      </div>
+
+<!-- start conference top nav -->
+      <div id="top-right">
+        <nav id="conference-top">
+                      <ul class="menu"><li class="first leaf menu-mlid-4366"><a href="/conferences" title="">Conferences</a></li>
+<li class="last leaf menu-mlid-4368"><a href="/students" title="">Students</a></li>
+</ul>          
+                      <span class="conference-header-login"><a href="/user?destination=node/190948">Sign in</a></span>                  </nav>
+      </div>
+<!-- end conference top nav -->
+
+    </div>
+  </div>
+</div>
+<!-- start conference header -->
+<div id="conference-header">
+  <div id='header-theme'>
+          <a href="/conference/usenixsecurity15">
+        <div id="header-main" class="header-main-replaced" style="background-image: url('https://www.usenix.org/sites/default/files/styles/conference_header/public/sec15_banner.png');">
+          <div class="header-main-background"></div>
+        </div>
+      </a>
+      </div>
+</div>
+<!-- end conference header -->
+        <div class="layout--usenix-conference-base" id="page-wrapper"><div id="page">
+
+
+  <div id='horizontal_menu'>
+	
+<div class='block block-nice-menus-2 clearfix'  id="block-nice-menus-2">
+  
+  
+  
+  
+      <div class='column-main'><div class='column-wrapper'>
+  
+  
+  
+  
+      <div class='-content clearfix '>
+      <ul class="nice-menu nice-menu-down nice-menu-menu-og-435" id="nice-menu-2"><li class="menu-26835 menu-path-node-181604 first odd "><a href="/conference/usenixsecurity15" title="">Home</a></li>
+<li class="menu-27707 menuparent  menu-path-node-190308  even "><a href="/conference/usenixsecurity15/registration-information">Attend</a><ul><li class="menu-27644 menu-path-node-188143 first odd "><a href="/conference/usenixsecurity15/venue-hotel-and-travel" title="">Venue, Hotel, and Travel</a></li>
+<li class="menu-27784 menu-path-node-190312  even "><a href="/conference/usenixsecurity15/students-and-grants" title="">Students and Grants</a></li>
+<li class="menu-27793 menu-path-node-189411  odd last"><a href="/conference/usenixsecurity15/co-located-workshops">Co-Located Workshops</a></li>
+</ul></li>
+<li class="menu-27882 menuparent  menu-path-node-190733  odd "><a href="/conference/usenixsecurity15/technical-sessions" title="">Program</a><ul><li class="menu-27966 menu-path-node-191023 first odd "><a href="/conference/usenixsecurity15/glance" title="">At a Glance</a></li>
+<li class="menu-27883 menu-path-node-190733  even "><a href="/conference/usenixsecurity15/technical-sessions" title="">Technical Sessions</a></li>
+<li class="menu-27974 menu-path-node-192663  odd last"><a href="/conference/usenixsecurity15/poster-session" title="">Poster Session</a></li>
+</ul></li>
+<li class="menu-27897 menuparent  menu-path-node-191625  even "><a href="/conference/usenixsecurity15/activities" title="">Activities</a><ul><li class="menu-27896 menu-path-node-191627 first odd "><a href="/conference/usenixsecurity15/birds-feather-sessions">Birds-of-a-Feather Sessions</a></li>
+<li class="menu-27917 menu-path-node-192663  even "><a href="/conference/usenixsecurity15/poster-session" title="">Poster Session</a></li>
+<li class="menu-27916 menu-path-susenixorg-conference-usenixsecurity15-activitieswips  odd last"><a href="https://www.usenix.org/conference/usenixsecurity15/activities#wips" title="">WiPs</a></li>
+</ul></li>
+<li class="menu-27704 menuparent  menu-path-node-188517  odd "><a href="/conference/usenixsecurity15/call-for-papers" title="">Participate</a><ul><li class="menu-27349 menuparent  menu-path-node-188517 first odd "><a href="/conference/usenixsecurity15/call-for-papers" title="">Call for Papers</a><ul><li class="menu-27351 menu-path-node-188522 first odd "><a href="/conference/usenixsecurity15/important-dates" title="">Important Dates</a></li>
+<li class="menu-27352 menu-path-node-188552  even "><a href="/conference/usenixsecurity15/symposium-organizers-cfp" title="">Symposium Organizers</a></li>
+<li class="menu-27353 menu-path-node-188553  odd "><a href="/conference/usenixsecurity15/symposium-topics" title="">Symposium Topics</a></li>
+<li class="menu-27354 menu-path-node-188554  even "><a href="/conference/usenixsecurity15/refereed-papers" title="">Refereed Papers</a></li>
+<li class="menu-27355 menu-path-node-188555  odd "><a href="/conference/usenixsecurity15/shadow-pc" title="">Shadow PC</a></li>
+<li class="menu-27356 menu-path-node-188556  even "><a href="/conference/usenixsecurity15/symposium-activities" title="">Symposium Activities</a></li>
+<li class="menu-27357 menu-path-node-188557  odd last"><a href="/conference/usenixsecurity15/submitting-papers" title="">Submitting Papers</a></li>
+</ul></li>
+<li class="menu-27821 menu-path-node-190313  even last"><a href="/conference/usenixsecurity15/instructions-participants" title="">Instructions for Participants</a></li>
+</ul></li>
+<li class="menu-26837 menu-path-node-188144  even "><a href="/conference/usenixsecurity15/sponsorship" title="">Sponsorship</a></li>
+<li class="menu-27705 menuparent  menu-path-node-188558  odd last"><a href="/conference/usenixsecurity15/symposium-organizers" title="">About</a><ul><li class="menu-27350 menu-path-node-188558 first odd "><a href="/conference/usenixsecurity15/symposium-organizers" title="">Symposium Organizers</a></li>
+<li class="menu-28005 menu-path-node-192992  even "><a href="/conference/usenixsecurity15/services" title="">Services</a></li>
+<li class="menu-28006 menu-path-node-192993  odd "><a href="/conference/usenixsecurity15/questions" title="">Questions</a></li>
+<li class="menu-27479 menu-path-node-188844  even "><a href="/conference/usenixsecurity15/help-promote-usenix-security-15" title="">Help Promote!</a></li>
+<li class="menu-26838 menu-path-susenixorg-conferences-byname-108  odd last"><a href="https://www.usenix.org/conferences/byname/108" title="">Past Symposia</a></li>
+</ul></li>
+</ul>
+    </div>
+  
+      </div></div>
+  </div>
+
+  </div>
+
+<div id="container">
+
+  <div class='clearfix limiter page-content'>
+          <div id='sidebar-left'>
+<div class='block block-og-menu-og-single-menu-block clearfix'  id="block-og-menu-og-single-menu-block">
+  
+  
+  
+  
+      <div class='column-main'><div class='column-wrapper'>
+  
+  
+  
+  
+      <div class='-content clearfix '>
+      <ul class="menu"><li class="first leaf menu-mlid-26835"><a href="/conference/usenixsecurity15" title="">Home</a></li>
+<li class="expanded has-children menu-mlid-27707"><a href="/conference/usenixsecurity15/registration-information">Attend</a><ul><li class="first leaf menu-mlid-27644"><a href="/conference/usenixsecurity15/venue-hotel-and-travel" title="">Venue, Hotel, and Travel</a></li>
+<li class="leaf menu-mlid-27784"><a href="/conference/usenixsecurity15/students-and-grants" title="">Students and Grants</a></li>
+<li class="last leaf menu-mlid-27793"><a href="/conference/usenixsecurity15/co-located-workshops">Co-Located Workshops</a></li>
+</ul></li>
+<li class="collapsed menu-mlid-27882"><a href="/conference/usenixsecurity15/technical-sessions" title="">Program</a></li>
+<li class="collapsed menu-mlid-27897"><a href="/conference/usenixsecurity15/activities" title="">Activities</a></li>
+<li class="expanded has-children menu-mlid-27704"><a href="/conference/usenixsecurity15/call-for-papers" title="">Participate</a><ul><li class="first collapsed menu-mlid-27349"><a href="/conference/usenixsecurity15/call-for-papers" title="">Call for Papers</a></li>
+<li class="last leaf menu-mlid-27821"><a href="/conference/usenixsecurity15/instructions-participants" title="">Instructions for Participants</a></li>
+</ul></li>
+<li class="leaf menu-mlid-26837"><a href="/conference/usenixsecurity15/sponsorship" title="">Sponsorship</a></li>
+<li class="last expanded has-children menu-mlid-27705"><a href="/conference/usenixsecurity15/symposium-organizers" title="">About</a><ul><li class="first leaf menu-mlid-27350"><a href="/conference/usenixsecurity15/symposium-organizers" title="">Symposium Organizers</a></li>
+<li class="leaf menu-mlid-28005"><a href="/conference/usenixsecurity15/services" title="">Services</a></li>
+<li class="leaf menu-mlid-28006"><a href="/conference/usenixsecurity15/questions" title="">Questions</a></li>
+<li class="leaf menu-mlid-27479"><a href="/conference/usenixsecurity15/help-promote-usenix-security-15" title="">Help Promote!</a></li>
+<li class="last leaf menu-mlid-26838"><a href="https://www.usenix.org/conferences/byname/108" title="">Past Symposia</a></li>
+</ul></li>
+</ul>    </div>
+  
+      </div></div>
+  </div>
+
+
+<div class='block block-views-sponsor-slideshow-block-1 clearfix'  id="block-views-sponsor-slideshow-block-1">
+  
+  
+  
+  
+      <div class='column-main'><div class='column-wrapper'>
+  
+  
+      <h2  class="block-title">
+            sponsors    </h2>
+  
+  
+      <div class='-content clearfix '>
+      <div class="view view-sponsor-slideshow view-id-sponsor_slideshow view-display-id-block_1 view-dom-id-ed573c5c2bff587003c86c1efd142bdb">
+        
+  
+  
+      <div class="view-content">
+      
+  <div class="skin-default">
+    
+    <div id="views_slideshow_cycle_main_sponsor_slideshow-block_1" class="views_slideshow_cycle_main views_slideshow_main"><div id="views_slideshow_cycle_teaser_section_sponsor_slideshow-block_1" class="views-slideshow-cycle-main-frame views_slideshow_cycle_teaser_section">
+  <div id="views_slideshow_cycle_div_sponsor_slideshow-block_1_0" class="views-slideshow-cycle-main-frame-row views_slideshow_cycle_slide views_slideshow_slide views-row-1 views-row-odd" aria-labelledby='views_slideshow_pager_field_item_bottom_sponsor_slideshow-block_1_0'>
+  <div class="views-slideshow-cycle-main-frame-row-item views-row views-row-0 views-row-odd views-row-first">
+    
+  <div class="views-field views-field-field-sponsor-level">        <div class="field-content">Platinum Sponsor</div>  </div>  
+  <div class="views-field views-field-field-sponsor-image">        <div class="field-content"><a href="https://www.facebook.com" target="_blank"><img src="https://www.usenix.org/sites/default/files/styles/sponsor_slideshow_front/public/sponsor_images/facebook_150x50_3.png" width="150" height="50" alt="" /></a></div>  </div></div>
+</div>
+<div id="views_slideshow_cycle_div_sponsor_slideshow-block_1_1" class="views-slideshow-cycle-main-frame-row views_slideshow_cycle_slide views_slideshow_slide views-row-2 views_slideshow_cycle_hidden views-row-even" aria-labelledby='views_slideshow_pager_field_item_bottom_sponsor_slideshow-block_1_1'>
+  <div class="views-slideshow-cycle-main-frame-row-item views-row views-row-1 views-row-even">
+    
+  <div class="views-field views-field-field-sponsor-level">        <div class="field-content">Gold Sponsor</div>  </div>  
+  <div class="views-field views-field-field-sponsor-image">        <div class="field-content"><a href="http://www.nsf.gov" target="_blank"><img src="https://www.usenix.org/sites/default/files/styles/sponsor_slideshow_front/public/sponsor_images/nsf_150x60_v2.png" width="150" height="60" alt="" /></a></div>  </div></div>
+</div>
+<div id="views_slideshow_cycle_div_sponsor_slideshow-block_1_2" class="views-slideshow-cycle-main-frame-row views_slideshow_cycle_slide views_slideshow_slide views-row-3 views_slideshow_cycle_hidden views-row-odd" aria-labelledby='views_slideshow_pager_field_item_bottom_sponsor_slideshow-block_1_2'>
+  <div class="views-slideshow-cycle-main-frame-row-item views-row views-row-2 views-row-odd">
+    
+  <div class="views-field views-field-field-sponsor-level">        <div class="field-content">Gold Sponsor</div>  </div>  
+  <div class="views-field views-field-field-sponsor-image">        <div class="field-content"><a href="http://www.symantec.com" target="_blank"><img src="https://www.usenix.org/sites/default/files/styles/sponsor_slideshow_front/public/sponsor_images/symantec_logo_1.png" width="200" height="54" alt="" /></a></div>  </div></div>
+</div>
+<div id="views_slideshow_cycle_div_sponsor_slideshow-block_1_3" class="views-slideshow-cycle-main-frame-row views_slideshow_cycle_slide views_slideshow_slide views-row-4 views_slideshow_cycle_hidden views-row-even" aria-labelledby='views_slideshow_pager_field_item_bottom_sponsor_slideshow-block_1_3'>
+  <div class="views-slideshow-cycle-main-frame-row-item views-row views-row-3 views-row-even">
+    
+  <div class="views-field views-field-field-sponsor-level">        <div class="field-content">Silver Sponsor</div>  </div>  
+  <div class="views-field views-field-field-sponsor-image">        <div class="field-content"><a href="https://www.google.com" target="_blank"><img src="https://www.usenix.org/sites/default/files/styles/sponsor_slideshow_front/public/sponsor_images/google_6.png" width="200" height="73" alt="" /></a></div>  </div></div>
+</div>
+<div id="views_slideshow_cycle_div_sponsor_slideshow-block_1_4" class="views-slideshow-cycle-main-frame-row views_slideshow_cycle_slide views_slideshow_slide views-row-5 views_slideshow_cycle_hidden views-row-odd" aria-labelledby='views_slideshow_pager_field_item_bottom_sponsor_slideshow-block_1_4'>
+  <div class="views-slideshow-cycle-main-frame-row-item views-row views-row-4 views-row-odd">
+    
+  <div class="views-field views-field-field-sponsor-level">        <div class="field-content">Silver Sponsor</div>  </div>  
+  <div class="views-field views-field-field-sponsor-image">        <div class="field-content"><a href="http://cybersecurity.ieee.org" target="_blank"><img src="https://www.usenix.org/sites/default/files/styles/sponsor_slideshow_front/public/sponsor_images/ieee_cybersecurity_150x73.png" width="150" height="73" alt="" /></a></div>  </div></div>
+</div>
+<div id="views_slideshow_cycle_div_sponsor_slideshow-block_1_5" class="views-slideshow-cycle-main-frame-row views_slideshow_cycle_slide views_slideshow_slide views-row-6 views_slideshow_cycle_hidden views-row-even" aria-labelledby='views_slideshow_pager_field_item_bottom_sponsor_slideshow-block_1_5'>
+  <div class="views-slideshow-cycle-main-frame-row-item views-row views-row-5 views-row-even">
+    
+  <div class="views-field views-field-field-sponsor-level">        <div class="field-content">Silver Sponsor</div>  </div>  
+  <div class="views-field views-field-field-sponsor-image">        <div class="field-content"><a href="http://www.microsoft.com" target="_blank"><img src="https://www.usenix.org/sites/default/files/styles/sponsor_slideshow_front/public/sponsor_images/microsoft_150x60_0.png" width="150" height="60" alt="" /></a></div>  </div></div>
+</div>
+<div id="views_slideshow_cycle_div_sponsor_slideshow-block_1_6" class="views-slideshow-cycle-main-frame-row views_slideshow_cycle_slide views_slideshow_slide views-row-7 views_slideshow_cycle_hidden views-row-odd" aria-labelledby='views_slideshow_pager_field_item_bottom_sponsor_slideshow-block_1_6'>
+  <div class="views-slideshow-cycle-main-frame-row-item views-row views-row-6 views-row-odd">
+    
+  <div class="views-field views-field-field-sponsor-level">        <div class="field-content">Bronze Sponsor</div>  </div>  
+  <div class="views-field views-field-field-sponsor-image">        <div class="field-content"><a href="http://www.qualcomm.com" target="_blank"><img src="https://www.usenix.org/sites/default/files/styles/sponsor_slideshow_front/public/sponsor_images/qualcomm_150x22.png" width="150" height="33" alt="" /></a></div>  </div></div>
+</div>
+<div id="views_slideshow_cycle_div_sponsor_slideshow-block_1_7" class="views-slideshow-cycle-main-frame-row views_slideshow_cycle_slide views_slideshow_slide views-row-8 views_slideshow_cycle_hidden views-row-even" aria-labelledby='views_slideshow_pager_field_item_bottom_sponsor_slideshow-block_1_7'>
+  <div class="views-slideshow-cycle-main-frame-row-item views-row views-row-7 views-row-even">
+    
+  <div class="views-field views-field-field-sponsor-level">        <div class="field-content">Bronze Sponsor</div>  </div>  
+  <div class="views-field views-field-field-sponsor-image">        <div class="field-content"><a href="http://sfbay.craigslist.org/about/craigslist_is_hiring" target="_blank"><img src="https://www.usenix.org/sites/default/files/styles/sponsor_slideshow_front/public/sponsor_images/craigslist_150x35_1.png" width="150" height="35" alt="" /></a></div>  </div></div>
+</div>
+<div id="views_slideshow_cycle_div_sponsor_slideshow-block_1_8" class="views-slideshow-cycle-main-frame-row views_slideshow_cycle_slide views_slideshow_slide views-row-9 views_slideshow_cycle_hidden views-row-odd" aria-labelledby='views_slideshow_pager_field_item_bottom_sponsor_slideshow-block_1_8'>
+  <div class="views-slideshow-cycle-main-frame-row-item views-row views-row-8 views-row-odd">
+    
+  <div class="views-field views-field-field-sponsor-level">        <div class="field-content">General Sponsor</div>  </div>  
+  <div class="views-field views-field-field-sponsor-image">        <div class="field-content"><a href="http://www.oup.com/us" target="_blank"><img src="https://www.usenix.org/sites/default/files/styles/sponsor_slideshow_front/public/sponsor_images/oxford_university_press_150x55.png" width="150" height="55" alt="" /></a></div>  </div></div>
+</div>
+<div id="views_slideshow_cycle_div_sponsor_slideshow-block_1_9" class="views-slideshow-cycle-main-frame-row views_slideshow_cycle_slide views_slideshow_slide views-row-10 views_slideshow_cycle_hidden views-row-even" aria-labelledby='views_slideshow_pager_field_item_bottom_sponsor_slideshow-block_1_9'>
+  <div class="views-slideshow-cycle-main-frame-row-item views-row views-row-9 views-row-even">
+    
+  <div class="views-field views-field-field-sponsor-level">        <div class="field-content">Media Sponsor</div>  </div>  
+  <div class="views-field views-field-field-sponsor-image">        <div class="field-content"><a href="http://www.infosecnews.org" target="_blank"><img src="https://www.usenix.org/sites/default/files/styles/sponsor_slideshow_front/public/sponsor_images/infosecnews_150x38.png" width="150" height="38" alt="" /></a></div>  </div></div>
+</div>
+<div id="views_slideshow_cycle_div_sponsor_slideshow-block_1_10" class="views-slideshow-cycle-main-frame-row views_slideshow_cycle_slide views_slideshow_slide views-row-11 views_slideshow_cycle_hidden views-row-odd" aria-labelledby='views_slideshow_pager_field_item_bottom_sponsor_slideshow-block_1_10'>
+  <div class="views-slideshow-cycle-main-frame-row-item views-row views-row-10 views-row-odd">
+    
+  <div class="views-field views-field-field-sponsor-level">        <div class="field-content">Media Sponsor</div>  </div>  
+  <div class="views-field views-field-field-sponsor-image">        <div class="field-content"><a href="http://tci.taborcommunications.com/HPCwireLogo_Usenix" target="_blank"><img src="https://www.usenix.org/sites/default/files/styles/sponsor_slideshow_front/public/sponsor_images/hpcwire_150x55_0.png" width="150" height="55" alt="" /></a></div>  </div></div>
+</div>
+<div id="views_slideshow_cycle_div_sponsor_slideshow-block_1_11" class="views-slideshow-cycle-main-frame-row views_slideshow_cycle_slide views_slideshow_slide views-row-12 views_slideshow_cycle_hidden views-row-even" aria-labelledby='views_slideshow_pager_field_item_bottom_sponsor_slideshow-block_1_11'>
+  <div class="views-slideshow-cycle-main-frame-row-item views-row views-row-11 views-row-even">
+    
+  <div class="views-field views-field-field-sponsor-level">        <div class="field-content">Media Sponsor</div>  </div>  
+  <div class="views-field views-field-field-sponsor-image">        <div class="field-content"><a href="http://www.userfriendly.org" target="_blank"><img src="https://www.usenix.org/sites/default/files/styles/sponsor_slideshow_front/public/sponsor_images/userfriendly_150x60.png" width="150" height="60" alt="" /></a></div>  </div></div>
+</div>
+<div id="views_slideshow_cycle_div_sponsor_slideshow-block_1_12" class="views-slideshow-cycle-main-frame-row views_slideshow_cycle_slide views_slideshow_slide views-row-13 views_slideshow_cycle_hidden views-row-odd" aria-labelledby='views_slideshow_pager_field_item_bottom_sponsor_slideshow-block_1_12'>
+  <div class="views-slideshow-cycle-main-frame-row-item views-row views-row-12 views-row-odd">
+    
+  <div class="views-field views-field-field-sponsor-level">        <div class="field-content">Media Sponsor</div>  </div>  
+  <div class="views-field views-field-field-sponsor-image">        <div class="field-content"><a href="http://www.nostarch.com" target="_blank"><img src="https://www.usenix.org/sites/default/files/styles/sponsor_slideshow_front/public/sponsor_images/nostarch_600x240_0.png" width="200" height="80" alt="" /></a></div>  </div></div>
+</div>
+<div id="views_slideshow_cycle_div_sponsor_slideshow-block_1_13" class="views-slideshow-cycle-main-frame-row views_slideshow_cycle_slide views_slideshow_slide views-row-14 views_slideshow_cycle_hidden views-row-even" aria-labelledby='views_slideshow_pager_field_item_bottom_sponsor_slideshow-block_1_13'>
+  <div class="views-slideshow-cycle-main-frame-row-item views-row views-row-13 views-row-even">
+    
+  <div class="views-field views-field-field-sponsor-level">        <div class="field-content">Media Sponsor</div>  </div>  
+  <div class="views-field views-field-field-sponsor-image">        <div class="field-content"><a href="http://www.linuxpromagazine.com" target="_blank"><img src="https://www.usenix.org/sites/default/files/styles/sponsor_slideshow_front/public/sponsor_images/linux_pro_150x60.png" width="150" height="60" alt="" /></a></div>  </div></div>
+</div>
+<div id="views_slideshow_cycle_div_sponsor_slideshow-block_1_14" class="views-slideshow-cycle-main-frame-row views_slideshow_cycle_slide views_slideshow_slide views-row-15 views_slideshow_cycle_hidden views-row-odd" aria-labelledby='views_slideshow_pager_field_item_bottom_sponsor_slideshow-block_1_14'>
+  <div class="views-slideshow-cycle-main-frame-row-item views-row views-row-14 views-row-odd">
+    
+  <div class="views-field views-field-field-sponsor-level">        <div class="field-content">Media Sponsor</div>  </div>  
+  <div class="views-field views-field-field-sponsor-image">        <div class="field-content"><a href="http://www.linuxjournal.com" target="_blank"><img src="https://www.usenix.org/sites/default/files/styles/sponsor_slideshow_front/public/sponsor_images/linux_journal_150x72_2.png" width="150" height="72" alt="" /></a></div>  </div></div>
+</div>
+<div id="views_slideshow_cycle_div_sponsor_slideshow-block_1_15" class="views-slideshow-cycle-main-frame-row views_slideshow_cycle_slide views_slideshow_slide views-row-16 views_slideshow_cycle_hidden views-row-even" aria-labelledby='views_slideshow_pager_field_item_bottom_sponsor_slideshow-block_1_15'>
+  <div class="views-slideshow-cycle-main-frame-row-item views-row views-row-15 views-row-even">
+    
+  <div class="views-field views-field-field-sponsor-level">        <div class="field-content">Media Sponsor</div>  </div>  
+  <div class="views-field views-field-field-sponsor-image">        <div class="field-content"><a href="http://www.virusbulletin.com" target="_blank"><img src="https://www.usenix.org/sites/default/files/styles/sponsor_slideshow_front/public/sponsor_images/virus_bulletin_150x60.png" width="150" height="60" alt="" /></a></div>  </div></div>
+</div>
+<div id="views_slideshow_cycle_div_sponsor_slideshow-block_1_16" class="views-slideshow-cycle-main-frame-row views_slideshow_cycle_slide views_slideshow_slide views-row-17 views_slideshow_cycle_hidden views-row-odd" aria-labelledby='views_slideshow_pager_field_item_bottom_sponsor_slideshow-block_1_16'>
+  <div class="views-slideshow-cycle-main-frame-row-item views-row views-row-16 views-row-odd">
+    
+  <div class="views-field views-field-field-sponsor-level">        <div class="field-content">Media Sponsor</div>  </div>  
+  <div class="views-field views-field-field-sponsor-image">        <div class="field-content"><a href="http://www.crcpress.com/" target="_blank"><img src="https://www.usenix.org/sites/default/files/styles/sponsor_slideshow_front/public/sponsor_images/crc_press_150x60.png" width="150" height="60" alt="" /></a></div>  </div></div>
+</div>
+<div id="views_slideshow_cycle_div_sponsor_slideshow-block_1_17" class="views-slideshow-cycle-main-frame-row views_slideshow_cycle_slide views_slideshow_slide views-row-18 views_slideshow_cycle_hidden views-row-even" aria-labelledby='views_slideshow_pager_field_item_bottom_sponsor_slideshow-block_1_17'>
+  <div class="views-slideshow-cycle-main-frame-row-item views-row views-row-17 views-row-even">
+    
+  <div class="views-field views-field-field-sponsor-level">        <div class="field-content">Media Sponsor</div>  </div>  
+  <div class="views-field views-field-field-sponsor-image">        <div class="field-content"><a href="http://queue.acm.org" target="_blank"><img src="https://www.usenix.org/sites/default/files/styles/sponsor_slideshow_front/public/sponsor_images/acmqueue_150x48_3.png" width="150" height="48" alt="" /></a></div>  </div></div>
+</div>
+<div id="views_slideshow_cycle_div_sponsor_slideshow-block_1_18" class="views-slideshow-cycle-main-frame-row views_slideshow_cycle_slide views_slideshow_slide views-row-19 views_slideshow_cycle_hidden views-row-odd" aria-labelledby='views_slideshow_pager_field_item_bottom_sponsor_slideshow-block_1_18'>
+  <div class="views-slideshow-cycle-main-frame-row-item views-row views-row-18 views-row-odd">
+    
+  <div class="views-field views-field-field-sponsor-level">        <div class="field-content">Media Sponsor</div>  </div>  
+  <div class="views-field views-field-field-sponsor-image">        <div class="field-content"><a href="http://www.admin-magazine.com" target="_blank"><img src="https://www.usenix.org/sites/default/files/styles/sponsor_slideshow_front/public/sponsor_images/admin_150x60.png" width="150" height="60" alt="" /></a></div>  </div></div>
+</div>
+<div id="views_slideshow_cycle_div_sponsor_slideshow-block_1_19" class="views-slideshow-cycle-main-frame-row views_slideshow_cycle_slide views_slideshow_slide views-row-20 views_slideshow_cycle_hidden views-row-even" aria-labelledby='views_slideshow_pager_field_item_bottom_sponsor_slideshow-block_1_19'>
+  <div class="views-slideshow-cycle-main-frame-row-item views-row views-row-19 views-row-even">
+    
+  <div class="views-field views-field-field-sponsor-level">        <div class="field-content">Industry Partner</div>  </div>  
+  <div class="views-field views-field-field-sponsor-image">        <div class="field-content"><a href="http://www.dmtf.org" target="_blank"><img src="https://www.usenix.org/sites/default/files/styles/sponsor_slideshow_front/public/sponsor_images/dmtf_600x240.png" width="200" height="80" alt="" /></a></div>  </div></div>
+</div>
+<div id="views_slideshow_cycle_div_sponsor_slideshow-block_1_20" class="views-slideshow-cycle-main-frame-row views_slideshow_cycle_slide views_slideshow_slide views-row-21 views_slideshow_cycle_hidden views-row-odd" aria-labelledby='views_slideshow_pager_field_item_bottom_sponsor_slideshow-block_1_20'>
+  <div class="views-slideshow-cycle-main-frame-row-item views-row views-row-20 views-row-odd views-row-last">
+    
+  <div class="views-field views-field-field-sponsor-level">        <div class="field-content">Industry Partner</div>  </div>  
+  <div class="views-field views-field-field-sponsor-image">        <div class="field-content"><a href="https://www.eff.org" target="_blank"><img src="https://www.usenix.org/sites/default/files/styles/sponsor_slideshow_front/public/sponsor_images/eff_horizontal_150x66_1.png" width="150" height="66" alt="" /></a></div>  </div></div>
+</div>
+</div>
+</div>
+      </div>
+    </div>
+  
+  
+  
+  
+  
+  
+</div>    </div>
+  
+      </div></div>
+  </div>
+
+
+<div class='block block-block-85 clearfix'  id="block-block-85">
+  
+  
+  
+  
+      <div class='column-main'><div class='column-wrapper'>
+  
+  
+      <h2  class="block-title">
+            help promote    </h2>
+  
+  
+      <div class='-content clearfix '>
+      <div style="background-color: #e6e6e6; padding: 10px;">
+<p style="text-align: center;">
+<img style="border: 1px solid black;" src="/sites/default/files/sec16_button_180.png" alt="USENIX Security '16 button" width="125" height="125" align="middle">
+</p>
+<p style="text-align: center;"><strong>Get more <br><a href="/conference/usenixsecurity16/help-promote-usenix-security-16">Help Promote graphics!</a></strong></p>
+</div>    </div>
+  
+      </div></div>
+  </div>
+
+
+<div class='block block-block-112 clearfix'  id="block-block-112">
+  
+  
+  
+  
+      <div class='column-main'><div class='column-wrapper'>
+  
+  
+      <h2  class="block-title">
+            USENIX Conference Policies    </h2>
+  
+  
+      <div class='-content clearfix '>
+              <ul>
+            <li><a href="/conferences/coc">Event Code of Conduct</a></li>
+
+            <li><a href="/conferences/network-policy">Conference Network Policy</a></li>
+
+            <li><a href="/conferences/environmental-responsibility">Statement on Environmental Responsibility Policy</a></li>
+        </ul>
+    </div>
+  
+      </div></div>
+  </div>
+
+</div>
+    
+    <div id="content" class=
+      'left-sidebar'
+            > <!-- closing content class -->
+      
+      <div class='below-breadcrumb clearfix'></div>
+
+      
+      <h1 class='page-title '>
+                SUPOR: Precise and Scalable Sensitive User Input Detection for Android Apps      </h1>
+
+      
+      
+      
+      
+              <div class='content-wrapper clearfix'>
+<div id="node-190948" class="node node-paper view-mode-full clearfix" id="node-190948">
+
+  
+      
+  
+  <div class="content">
+    <div class="field field-name-field-paper-people-text field-type-text-long field-label-hidden"><div class="field-items field-items"><div class="field-item odd"><p class="p1">Jianjun Huang, <i>Purdue University;</i> Zhichun Li, Xusheng Xiao, and Zhenyu Wu, <i>NEC Labs America; </i>Kangjie Lu, <i>Georgia Institute of Technology; </i>Xiangyu Zhang, <i>Purdue University;</i> Guofei Jiang, <i>NEC Labs America</i></p></div></div></div><div class="field field-name-field-paper-description field-type-text-long field-label-hidden"><div class="field-items field-items"><div class="field-item odd"><p>While smartphones and mobile apps have been an essential part of our lives, privacy is a serious concern. Previous mobile privacy related research efforts have largely focused on predefined known sources managed by smartphones. Sensitive user inputs through UI (User Interface), another information source that may contain a lot of sensitive information, have been mostly neglected. </p>
+<p>In this paper, we examine the possibility of scalably detecting sensitive user inputs from mobile apps. In particular, we design and implement SUPOR, a novel static analysis tool that automatically examines the UIs to identify sensitive user inputs containing critical user data, such as user credentials, finance, and medical data. SUPOR enables existing privacy analysis approaches to be applied on sensitive user inputs as well. To demonstrate the usefulness of SUPOR, we build a system that detects privacy disclosures of sensitive user inputs by combining SUPOR with off-the-shelf static taint analysis We apply the system to 16,000 popular Android apps, and conduct a measurement study on the privacy disclosures. SUPOR achieves an average precision of 97.3% and an average recall of 97.3% for sensitive user input identification. SUPOR finds 355 apps with privacy disclosures and the false positive rate is 8.7%. We discover interesting cases related to national ID, username/password, credit card and health information.</p></div></div></div><div class="field field-name-field-paper-people field-type-node-reference field-label-hidden"><div class="field-items field-items"><div class="field-item odd">
+<div id="node-191480" class="node node-speaker view-mode-schedule clearfix" id="node-191480">
+
+  
+        <h2><a href="/conference/usenixsecurity15/speaker-or-organizer/jianjun-huang-purdue-university">Jianjun Huang, Purdue University</a></h2>
+    
+  
+  <div class="content">
+      </div>
+
+  
+</div>
+
+</div><div class="field-item even">
+<div id="node-191481" class="node node-speaker view-mode-schedule clearfix" id="node-191481">
+
+  
+        <h2><a href="/conference/usenixsecurity15/speaker-or-organizer/zhichun-li-nec-labs-america">Zhichun Li, NEC Labs America</a></h2>
+    
+  
+  <div class="content">
+      </div>
+
+  
+</div>
+
+</div><div class="field-item odd">
+<div id="node-191482" class="node node-speaker view-mode-schedule clearfix" id="node-191482">
+
+  
+        <h2><a href="/conference/usenixsecurity15/speaker-or-organizer/xusheng-xiao-nec-labs-america">Xusheng Xiao, NEC Labs America</a></h2>
+    
+  
+  <div class="content">
+      </div>
+
+  
+</div>
+
+</div><div class="field-item even">
+<div id="node-191483" class="node node-speaker view-mode-schedule clearfix" id="node-191483">
+
+  
+        <h2><a href="/conference/usenixsecurity15/speaker-or-organizer/zhenyu-wu-nec-labs-america">Zhenyu Wu, NEC Labs America</a></h2>
+    
+  
+  <div class="content">
+      </div>
+
+  
+</div>
+
+</div><div class="field-item odd">
+<div id="node-191484" class="node node-speaker view-mode-schedule clearfix" id="node-191484">
+
+  
+        <h2><a href="/conference/usenixsecurity15/speaker-or-organizer/kangjie-lu-georgia-institute-technology">Kangjie Lu, Georgia Institute of Technology</a></h2>
+    
+  
+  <div class="content">
+      </div>
+
+  
+</div>
+
+</div><div class="field-item even">
+<div id="node-191485" class="node node-speaker view-mode-schedule clearfix" id="node-191485">
+
+  
+        <h2><a href="/conference/usenixsecurity15/speaker-or-organizer/xiangyu-zhang-purdue-university">Xiangyu Zhang, Purdue University</a></h2>
+    
+  
+  <div class="content">
+      </div>
+
+  
+</div>
+
+</div><div class="field-item odd">
+<div id="node-191486" class="node node-speaker view-mode-schedule clearfix" id="node-191486">
+
+  
+        <h2><a href="/conference/usenixsecurity15/speaker-or-organizer/guofei-jiang-nec-labs-america">Guofei Jiang, NEC Labs America</a></h2>
+    
+  
+  <div class="content">
+      </div>
+
+  
+</div>
+
+</div></div></div><div id="node-paper-full-group-open-access-content" class=" group-open-access-content field-group-div"><h2><span>Open Access Media</span></h2><div class="description"><p>USENIX is committed to Open Access to the research presented at our events. Papers and proceedings are freely available to everyone once the event begins. Any video, audio, and/or slides that are posted after the event are also free and open to everyone. <a href="/annual-fund">Support USENIX</a> and our commitment to Open Access.</p>
+</div><div class="field field-name-field-bibtex-node field-type-node-reference field-label-hidden"><div class="field-items field-items"><div class="field-item odd"><div class="bibtex-accordion"><div class="bibtex-accordion-label">BibTeX</div><div class="bibtex-accordion-content"><div class="bibtex-text-entry bibtex-accordion-text-entry">@inproceedings {190947,<br />
+	author = {Jianjun Huang and Zhichun Li and Xusheng Xiao and Zhenyu Wu and Kangjie Lu and Xiangyu Zhang and Guofei Jiang},<br />
+	title = {{SUPOR}: Precise and Scalable Sensitive User Input Detection for Android Apps},<br />
+	booktitle = {24th USENIX Security Symposium (USENIX Security 15)},<br />
+	year = {2015},<br />
+	isbn = {978-1-939133-11-3},<br />
+	address = {Washington, D.C.},<br />
+	pages = {977--992},<br />
+	url = {https://www.usenix.org/conference/usenixsecurity15/technical-sessions/presentation/huang},<br />
+	publisher = {USENIX Association},<br />
+	month = aug<br />
+}<br />
+</div><div class="bibtex-download-link bibtex-accordion-download-link"><a href="/biblio/export/bibtex/190947">Download</a></div></div></div></div></div></div><div class="field field-name-field-presentation-pdf field-type-file field-label-hidden"><div class="field-items field-items"><div class="field-item odd"><span class="file"> <a href="https://www.usenix.org/system/files/conference/usenixsecurity15/sec15-paper-huang.pdf" type="application/pdf; length=601146" title="sec15-paper-huang.pdf">Huang PDF</a></span></div></div></div><div class="field field-name-field-paper-slides field-type-file field-label-hidden"><div class="field-items field-items"><div class="field-item odd"><div class="usenix-schedule-slides"><a href="https://www.usenix.org/sites/default/files/conference/protected-files/sec15_slides_huang.pdf">View the slides</a></div></div></div></div><h2 class="field field-name-field-embed-video field-type-video-embed-field field-label-above"><span class="field-label">Presentation Video&nbsp;</span><span class="field-item odd first last">
+<div class="embedded-video">
+  <div class="player">
+    <iframe title="YouTube video" class="large-12 medium-12 small-12 columns usenix-schedule-media" width="745" height="420" src="//www.youtube.com/embed/xFMggMuh5Wc?width%3D745%26amp%3Bheight%3D420%26amp%3Btheme%3Ddark%26amp%3Bautoplay%3D0%26amp%3Bvq%3Dhd720%26amp%3Brel%3D0%26amp%3Bshowinfo%3D0%26amp%3Bmodestbranding%3D0%26amp%3Biv_load_policy%3D1%26amp%3Bcontrols%3D1%26amp%3Bautohide%3D2%26amp%3Bwmode%3Dopaque" frameborder="0" allowfullscreen></iframe>  </div>
+</div>
+</span></h2><h4>Presentation Audio</h4>
+<div id="usenix-media-audio-1">
+  <audio controls>
+          <source src='https://2459d6dc103cb5933875-c0245c5c937c5dedcca3f1764ecc9b2f.ssl.cf2.rackcdn.com/sec15/huang.mp3'>
+                  <a href="https://2459d6dc103cb5933875-c0245c5c937c5dedcca3f1764ecc9b2f.ssl.cf2.rackcdn.com/sec15/huang.mp3">MP3 Download</a>
+          </audio>
+  <p><a href="https://2459d6dc103cb5933875-c0245c5c937c5dedcca3f1764ecc9b2f.ssl.cf2.rackcdn.com/sec15/huang.mp3">Download Audio</a></p>
+</div>
+</div>  </div>
+
+      <div class='node-links clearfix'><ul class="links inline"><li class="comment-forbidden odd first last"><span><a href="/user/login?destination=comment/reply/190948%23comment-form">Log in</a> or <a href="/user/register?destination=comment/reply/190948%23comment-form">register</a> to post comments</span></li></ul></div>
+  
+</div>
+
+</div>
+                </div>
+
+    
+	
+  </div>
+</div>
+
+<div id="footer-outer"><div id='footer' class='limiter clearfix'>
+    <div id='pre-footer'>
+    <div id='pre-footer-inner'>
+<div class='block block-views-sponsors-conference-block-1 clearfix'  id="block-views-sponsors-conference-block-1">
+  
+  
+  
+  
+      <div class='column-main'><div class='column-wrapper'>
+  
+  
+      <h2  class="block-title">
+            Gold Sponsors    </h2>
+  
+  
+      <div class='-content clearfix '>
+      <div class="view view-sponsors-conference view-id-sponsors_conference view-display-id-block_1 view-dom-id-8ce36a89b69f28ca68bda66324d31dea">
+        
+  
+  
+      <div class="view-content">
+        <div class="views-row views-row-1 odd first">
+      
+          <a href="http://www.nsf.gov" target="_blank"></a>    
+          <a href="http://www.nsf.gov" target="_blank"><img src="https://www.usenix.org/sites/default/files/styles/sponsor_interest_color/public/sponsor_images/nsf_150x60_v2.png" width="115" height="46" alt="" /></a>    </div>
+  <div class="views-row views-row-2 even last">
+      
+          <a href="http://www.symantec.com" target="_blank"></a>    
+          <a href="http://www.symantec.com" target="_blank"><img src="https://www.usenix.org/sites/default/files/styles/sponsor_interest_color/public/sponsor_images/symantec_logo_1.png" width="115" height="31" alt="" /></a>    </div>
+    </div>
+  
+  
+  
+  
+  
+  
+</div>    </div>
+  
+      </div></div>
+  </div>
+
+
+<div class='block block-views-sponsors-conference-block-4 clearfix'  id="block-views-sponsors-conference-block-4">
+  
+  
+  
+  
+      <div class='column-main'><div class='column-wrapper'>
+  
+  
+      <h2  class="block-title">
+            Silver Sponsors    </h2>
+  
+  
+      <div class='-content clearfix '>
+      <div class="view view-sponsors-conference view-id-sponsors_conference view-display-id-block_4 view-dom-id-26dda3ff0d2af5fcabfcd9fcd076ea8b">
+        
+  
+  
+      <div class="view-content">
+        <div class="views-row views-row-1 odd first">
+      
+          <a href="https://www.google.com" target="_blank"><img src="https://www.usenix.org/sites/default/files/styles/sponsor_interest_color/public/sponsor_images/google_6.png" width="115" height="42" alt="" /></a>    </div>
+  <div class="views-row views-row-2 even">
+      
+          <a href="http://cybersecurity.ieee.org" target="_blank"><img src="https://www.usenix.org/sites/default/files/styles/sponsor_interest_color/public/sponsor_images/ieee_cybersecurity_150x73.png" width="115" height="56" alt="" /></a>    </div>
+  <div class="views-row views-row-3 odd last">
+      
+          <a href="http://www.microsoft.com" target="_blank"><img src="https://www.usenix.org/sites/default/files/styles/sponsor_interest_color/public/sponsor_images/microsoft_150x60_0.png" width="115" height="46" alt="" /></a>    </div>
+    </div>
+  
+  
+  
+  
+  
+  
+</div>    </div>
+  
+      </div></div>
+  </div>
+
+
+<div class='block block-views-sponsors-conference-block-5 clearfix'  id="block-views-sponsors-conference-block-5">
+  
+  
+  
+  
+      <div class='column-main'><div class='column-wrapper'>
+  
+  
+      <h2  class="block-title">
+            Bronze Sponsors    </h2>
+  
+  
+      <div class='-content clearfix '>
+      <div class="view view-sponsors-conference view-id-sponsors_conference view-display-id-block_5 view-dom-id-808c680ae238a68beb8fea18e0b52504">
+        
+  
+  
+      <div class="view-content">
+        <div class="views-row views-row-1 odd first">
+      
+          <a href="http://sfbay.craigslist.org/about/craigslist_is_hiring" target="_blank"></a>    
+          <a href="http://sfbay.craigslist.org/about/craigslist_is_hiring" target="_blank"><img src="https://www.usenix.org/sites/default/files/styles/sponsor_interest_color/public/sponsor_images/craigslist_150x35_1.png" width="115" height="27" alt="" /></a>    </div>
+  <div class="views-row views-row-2 even last">
+      
+          <a href="http://www.qualcomm.com" target="_blank"></a>    
+          <a href="http://www.qualcomm.com" target="_blank"><img src="https://www.usenix.org/sites/default/files/styles/sponsor_interest_color/public/sponsor_images/qualcomm_150x22.png" width="115" height="25" alt="" /></a>    </div>
+    </div>
+  
+  
+  
+  
+  
+  
+</div>    </div>
+  
+      </div></div>
+  </div>
+
+
+<div class='block block-views-sponsors-conference-block-7 clearfix'  id="block-views-sponsors-conference-block-7">
+  
+  
+  
+  
+      <div class='column-main'><div class='column-wrapper'>
+  
+  
+      <h2  class="block-title">
+            General Sponsors    </h2>
+  
+  
+      <div class='-content clearfix '>
+      <div class="view view-sponsors-conference view-id-sponsors_conference view-display-id-block_7 view-dom-id-e4320760bae864487d02df4f4ceb34ff">
+        
+  
+  
+      <div class="view-content">
+        <div class="views-row views-row-1 odd first last">
+      
+          <a href="http://www.oup.com/us" target="_blank"></a>    
+          <a href="http://www.oup.com/us" target="_blank"><img src="https://www.usenix.org/sites/default/files/styles/sponsor_interest_color/public/sponsor_images/oxford_university_press_150x55.png" width="115" height="42" alt="" /></a>    </div>
+    </div>
+  
+  
+  
+  
+  
+  
+</div>    </div>
+  
+      </div></div>
+  </div>
+
+
+<div class='block block-views-sponsors-conference-block-6 clearfix'  id="block-views-sponsors-conference-block-6">
+  
+  
+  
+  
+      <div class='column-main'><div class='column-wrapper'>
+  
+  
+      <h2  class="block-title">
+            Media Sponsors &amp; Industry Partners    </h2>
+  
+  
+      <div class='-content clearfix '>
+      <div class="view view-sponsors-conference view-id-sponsors_conference view-display-id-block_6 view-dom-id-1be0b5981019bb5580708f24dec61679">
+        
+  
+  
+      <div class="view-content">
+        <div class="views-row views-row-1 odd first">
+      
+          <a href="http://queue.acm.org"></a>    
+          <a href="http://queue.acm.org" target="_blank"><img src="https://www.usenix.org/sites/default/files/styles/sponsor_front_color/public/sponsor_images/acmqueue_150x48_3.png" width="90" height="29" alt="" /></a>    </div>
+  <div class="views-row views-row-2 even">
+      
+          <a href="http://www.admin-magazine.com"></a>    
+          <a href="http://www.admin-magazine.com" target="_blank"><img src="https://www.usenix.org/sites/default/files/styles/sponsor_front_color/public/sponsor_images/admin_150x60.png" width="90" height="36" alt="" /></a>    </div>
+  <div class="views-row views-row-3 odd">
+      
+          <a href="http://www.crcpress.com/"></a>    
+          <a href="http://www.crcpress.com/" target="_blank"><img src="https://www.usenix.org/sites/default/files/styles/sponsor_front_color/public/sponsor_images/crc_press_150x60.png" width="90" height="36" alt="" /></a>    </div>
+  <div class="views-row views-row-4 even">
+      
+          <a href="http://www.dmtf.org"></a>    
+          <a href="http://www.dmtf.org" target="_blank"><img src="https://www.usenix.org/sites/default/files/styles/sponsor_front_color/public/sponsor_images/dmtf_600x240.png" width="90" height="36" alt="" /></a>    </div>
+  <div class="views-row views-row-5 odd">
+      
+          <a href="https://www.eff.org"></a>    
+          <a href="https://www.eff.org" target="_blank"><img src="https://www.usenix.org/sites/default/files/styles/sponsor_front_color/public/sponsor_images/eff_horizontal_150x66_1.png" width="90" height="40" alt="" /></a>    </div>
+  <div class="views-row views-row-6 even">
+      
+          <a href="http://tci.taborcommunications.com/HPCwireLogo_Usenix"></a>    
+          <a href="http://tci.taborcommunications.com/HPCwireLogo_Usenix" target="_blank"><img src="https://www.usenix.org/sites/default/files/styles/sponsor_front_color/public/sponsor_images/hpcwire_150x55_0.png" width="90" height="33" alt="" /></a>    </div>
+  <div class="views-row views-row-7 odd">
+      
+          <a href="http://www.infosecnews.org"></a>    
+          <a href="http://www.infosecnews.org" target="_blank"><img src="https://www.usenix.org/sites/default/files/styles/sponsor_front_color/public/sponsor_images/infosecnews_150x38.png" width="90" height="23" alt="" /></a>    </div>
+  <div class="views-row views-row-8 even">
+      
+          <a href="http://www.linuxjournal.com"></a>    
+          <a href="http://www.linuxjournal.com" target="_blank"><img src="https://www.usenix.org/sites/default/files/styles/sponsor_front_color/public/sponsor_images/linux_journal_150x72_2.png" width="90" height="43" alt="" /></a>    </div>
+  <div class="views-row views-row-9 odd">
+      
+          <a href="http://www.linuxpromagazine.com"></a>    
+          <a href="http://www.linuxpromagazine.com" target="_blank"><img src="https://www.usenix.org/sites/default/files/styles/sponsor_front_color/public/sponsor_images/linux_pro_150x60.png" width="90" height="36" alt="" /></a>    </div>
+  <div class="views-row views-row-10 even">
+      
+          <a href="http://www.nostarch.com"></a>    
+          <a href="http://www.nostarch.com" target="_blank"><img src="https://www.usenix.org/sites/default/files/styles/sponsor_front_color/public/sponsor_images/nostarch_600x240_0.png" width="90" height="36" alt="" /></a>    </div>
+  <div class="views-row views-row-11 odd">
+      
+          <a href="http://www.userfriendly.org"></a>    
+          <a href="http://www.userfriendly.org" target="_blank"><img src="https://www.usenix.org/sites/default/files/styles/sponsor_front_color/public/sponsor_images/userfriendly_150x60.png" width="90" height="36" alt="" /></a>    </div>
+  <div class="views-row views-row-12 even last">
+      
+          <a href="http://www.virusbulletin.com"></a>    
+          <a href="http://www.virusbulletin.com" target="_blank"><img src="https://www.usenix.org/sites/default/files/styles/sponsor_front_color/public/sponsor_images/virus_bulletin_150x60.png" width="90" height="36" alt="" /></a>    </div>
+    </div>
+  
+  
+  
+  
+  
+  
+</div>    </div>
+  
+      </div></div>
+  </div>
+
+
+<div class='block block-views-sponsors-conference-block-9 clearfix'  id="block-views-sponsors-conference-block-9">
+  
+  
+  
+  
+      <div class='column-main'><div class='column-wrapper'>
+  
+  
+      <h2  class="block-title">
+            Open Access Publishing Partners    </h2>
+  
+  
+      <div class='-content clearfix '>
+      <div class="view view-sponsors-conference view-id-sponsors_conference view-display-id-block_9 view-dom-id-16b65961a8302fe5bdfcb0f1dea800be">
+        
+  
+  
+      <div class="view-content">
+        <div class="views-row views-row-1 odd first last">
+      
+          <a href="http://peerj.com/"></a>    
+          <a href="http://peerj.com/" target="_blank"><img src="https://www.usenix.org/sites/default/files/styles/sponsor_front_color/public/sponsor_images/peerj_600x240.png" width="90" height="36" alt="" /></a>    </div>
+    </div>
+  
+  
+  
+  
+  
+  
+</div>    </div>
+  
+      </div></div>
+  </div>
+
+</div>
+  </div>
+    
+        <div id='footer-region'>
+      
+<div class='block block-block-27 clearfix'  id="block-block-27">
+  
+  
+  
+  
+      <div class='column-main'><div class='column-wrapper'>
+  
+  
+  
+  
+      <div class='-content clearfix '>
+      <div style="padding-top: .25em;">
+	<p style="color: inherit;">&copy; USENIX <script>new Date().getFullYear()>document.write(new Date().getFullYear());</script><br>
+        EIN 13-3055038</p>
+</div>    </div>
+  
+      </div></div>
+  </div>
+
+
+<div class='block block-menu-menu-footer clearfix'  role="navigation" id="block-menu-menu-footer">
+  
+  
+  
+  
+      <div class='column-main'><div class='column-wrapper'>
+  
+  
+  
+  
+      <div class='-content clearfix '>
+      <ul class="menu-tree menu" data-menu-style="tree" data-clickdown="0" data-collapse="default"><li class="first leaf menu-mlid-2774"><a href="/privacy-policy">Privacy Policy</a></li>
+<li class="last leaf menu-mlid-2775"><a href="/contact">Contact Us</a></li>
+</ul>    </div>
+  
+      </div></div>
+  </div>
+
+    </div>
+  </div></div>
+
+
+    <noscript aria-hidden="true"><iframe src="https://www.googletagmanager.com/ns.html?id=GTM-WQSPGJT"
+ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>      <script defer src="https://static.cloudflareinsights.com/beacon.min.js/v8c78df7c7c0f484497ecbca7046644da1771523124516" integrity="sha512-8DS7rgIrAmghBFwoOTujcf6D9rXvH8xm8JQ1Ja01h9QX8EzXldiszufYa4IFfKdLUKTTrnSFXLDkUEOTrZQ8Qg==" data-cf-beacon='{"version":"2024.11.0","token":"04ec313fe1c44bdeb95db4ee6e679a22","r":1,"server_timing":{"name":{"cfCacheStatus":true,"cfEdge":true,"cfExtPri":true,"cfL4":true,"cfOrigin":true,"cfSpeedBrain":true},"location_startswith":null}}' crossorigin="anonymous"></script>
+<script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'9ea0e9dea881bdba',t:'MTc3NTgxNTMyMQ=='};var a=document.createElement('script');a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
+</html>

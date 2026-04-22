@@ -1,0 +1,41 @@
+nRF.
+
+1. Keys.
+Rules: BR016.
+Status: confirmed.
+This one stays confirmed, but only in the narrow artifact sense. The package resources contain Google and Firebase project identifiers. The original mentor review was clear that this is an APK extraction fact. It is not the same as a server secret leak. It is not the same as backend compromise. `app\nRF\resources\res\values\strings.xml` contains `google_api_key`. The same resource area also contains `google_app_id`. The same resource area also contains `project_id`. The mentor review kept this item because the identifiers are really present in the package. The mentor review also said not to turn this into a stronger claim than the code supports. So the confirmed part is only that the identifiers exist and are extractable. That is enough for BR016. That is not enough to say the project can be misused in a meaningful way. That is not enough to say any protected backend action can be completed.
+
+2. Health.
+Rules: BR018.
+Status: confirmed.
+This one is straightforward. The app does contain health and measurement models. The evidence chain is not based on UI names alone. The model classes are also there. `app\nRF\sources\ae\d.java` defines `GLSRecord`. That model includes glucose concentration and related context. `app\nRF\sources\ae\c.java` defines `GLSMeasurementContext`. That one includes carbohydrate, meal, tester, health, exercise, medication, and HbA1c. `app\nRF\sources\be\a.java` defines `HRSData`. That one includes heart rate and RR intervals. The evidence files also note Blood Pressure and Health Thermometer strings. So the app is really processing health style measurement content. This is enough for BR018. There is no need to guess here. It is a direct static code fact.
+
+3. Logs.
+Rules: BR047.
+Status: supported_hypothesis.
+This item should stay below confirmed. The raw BLE callback path is visible. The logging path is also visible. But there is still no runtime log sample in the material I used. `app\nRF\sources\no\nordicsemi\kotlin\ble\client\android\internal\NativeGattCallback.java` reads characteristic UUID and value. The evidence chain says it converts the byte array into a printable form and sends it to logger code. `app\nRF\sources\no\nordicsemi\android\nrftoolbox\ProfileService.java` creates `nRFLoggerTree` with `deviceAddress`. That makes the logging path concrete enough to keep as a serious hypothesis. At the same time, the mentor review was right to keep it below confirmed. I still do not have logcat output. I still do not have an nRF Logger database. I still do not have a real measurement session proving that health values reached logs. So BR047 stays as supported_hypothesis.
+
+4. BLE write.
+Rules: BR061, BR067, BR074.
+Status: supported_hypothesis.
+The write surface is real. The overclaim would be to turn it into a confirmed device attack. `app\nRF\sources\hf\l.java` is the main wrapper here. It reads and writes GATT characteristics. The write path takes a byte array and passes it into the Android BLE write APIs. The evidence chain did not find an app layer token, HMAC, signature, or nonce wrapper around that write. That matters. But it still does not prove the target device accepts unsafe commands. The same material also shows UART macro support. The macro path makes the write surface broader. Still, command meaning depends on the target peripheral protocol. So the right level is still supported_hypothesis. That keeps the logic clean. It also matches the original mentor review.
+
+5. UART storage.
+Rules: BR025.
+Status: supported_hypothesis.
+This one is not a made up storage concern. There is a real table. There is a real XML field. There is a real command text field. `app\nRF\sources\dd\d.java` creates `configurations(_id, name, xml, deleted)`. `app\nRF\sources\no\nordicsemi\android\nrftoolbox\uart\domain\XmlConfiguration.java` is part of that model. `app\nRF\sources\no\nordicsemi\android\nrftoolbox\uart\domain\XmlMacro.java` includes `command`. That is enough to say user defined macro text can be stored in ordinary app private database content. The reason this stays below confirmed is sensitivity. A macro command can be harmless. A macro command can also be sensitive if a user puts device secrets or control payloads in it. The original files were careful about that difference. I am keeping that same difference. So BR025 is strong, but still only supported_hypothesis.
+
+6. SDKs.
+Rules: BR040, BR041, BR092.
+Status: mixed.
+BR040 stays supported_hypothesis. BR041 stays not_supported. BR092 stays supported_hypothesis. The SDK initialization path is visible. The gating is also visible. The material says Manifest has FirebaseInitProvider, Crashlytics, Sessions, Installations, and DataTransport. `app\nRF\sources\no\nordicsemi\android\nrftoolbox\NrfToolboxApplication.java` queues `APP_OPEN`. `app\nRF\sources\wb\c.java` persists the user choice and controls Firebase Analytics collection enabled state. The Manifest defaults are important here. `firebase_analytics_collection_enabled=false`. `google_analytics_adid_collection_enabled=false`. `google_analytics_ssaid_collection_enabled=false`. That is why BR041 cannot stay as a positive finding. There is visible gating, so the stronger pre consent claim is not supported. Crashlytics is still relevant because the code builds device and installation headers. `app\nRF\sources\af\m.java` constructs those headers. That is enough for a supported device identifier payload hypothesis. It is not enough to claim a real request was sent in the traces I reviewed.
+
+7. Boundaries.
+Rules: BR028 not_supported, BR006 not_supported, BR009 not_supported, BR010 not_supported, BR021-BR024 not_supported, BR029-BR035 not_supported.
+Status: cleared.
+I want these exclusions written down because they keep the report honest. Backup is not a confirmed problem here. The Manifest sets `allowBackup=false`. The evidence inventory also notes data extraction rules that exclude sensitive areas. That is why BR028 was removed from the positive set. Cleartext transport is also not a supported finding here. I did not see a first party `usesCleartextTraffic=true` issue. I also did not see a first party trust all TLS chain. So BR006, BR009, and BR010 do not belong in the finding list for this app. Provider exposure also does not close. The materials say Firebase and AndroidX providers are not exported in the relevant way. `ProfileService` is explicitly `exported=false`. Deep link style rules also do not close. So this app still has useful BLE and SDK findings. It just does not support the broader set that might be easy to claim too quickly.
+
+8. Priority.
+Rules: BR090.
+Status: confirmed.
+I am keeping this because it was part of the original final review. The point is not that BR090 is an app vulnerability. The point is that the static material already gives a sensible dynamic verification plan. The strongest next checks are obvious from the code. The first one is the raw BLE value logging path in `NativeGattCallback`. The second one is the Firebase and Crashlytics timing path around app start and consent. The third one is the UART write path against a real peripheral. The fourth one is the local UART macro database content after test macros are saved. The mentor review kept BR090 because those targets are concrete and directly derived from code. So I am keeping that logic the same.

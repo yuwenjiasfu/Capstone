@@ -1,0 +1,109 @@
+1. TLS.
+Related rules: BR009, BR010.
+Status: confirmed.
+Files:
+`app\xdrip\sources\com\eveningoutpost\dexdrip\sharemodels\ShareRest.java:72,88-146,98,140-143,174-176,204-208`
+`app\xdrip\evidence\02_evidence_chains_zh.md:14-31`
+Chain:
+`ShareRest.java:72` creates the Retrofit client with the Dexcom Share HTTPS base URL. `ShareRest.java:88-146` builds the custom `OkHttpClient`. `ShareRest.java:98` leaves `checkServerTrusted(...)` empty. That is the TrustManager failure. `ShareRest.java:140-143` makes `HostnameVerifier.verify(...)` always return true. That is the hostname validation failure. The same client is then used in real account operations. `ShareRest.java:174` calls `getSessionId(new ShareAuthenticationBody(password, username).toMap())`. `ShareRest.java:175` calls `authenticatePublisherAccount(...)`. `ShareRest.java:176` calls `StartRemoteMonitoringSession(...)`. `ShareRest.java:204-208` uploads BG records with the same client. The evidence chain also notes contact and invitation operations at `:214-235`. This is why the issue should stay confirmed. The weak TLS logic is not isolated. It is attached to real Dexcom Share account and data flows.
+Limits:
+No MITM runtime trace is required to keep the static TLS rules confirmed.
+
+2. Logs.
+Related rules: BR047 confirmed, BR095 supported_hypothesis.
+Status: mixed.
+Files:
+`app\xdrip\sources\com\eveningoutpost\dexdrip\sharemodels\ShareRest.java:47-50,73-75,120,128,174-176,204-208`
+`app\xdrip\evidence\02_evidence_chains_zh.md:36-50`
+Chain:
+`ShareRest.java:47-50` registers a SharedPreferences change listener. `ShareRest.java:73-75` reads session, username, and password. That shows the class is sitting on sensitive inputs. `ShareRest.java:120` logs the request body. `ShareRest.java:128` logs the response body. The same class then performs authentication, session start, and BG upload. So the logging sink and the sensitive source are in one place. That is enough for BR047. BR095 stays lower because it is the cloud risk view. The TLS weakness is already confirmed by BR009 and BR010. The step that still needs runtime proof is actual live cloud leakage through a session the reviewer observed.
+Limits:
+No runtime logcat sample was preserved. The code path is still enough for BR047.
+
+3. Storage.
+Related rules: BR026 and BR027.
+Status: confirmed.
+Files:
+`app\xdrip\sources\com\eveningoutpost\dexdrip\utilitymodels\PersistentStore.java:43`
+`app\xdrip\sources\com\eveningoutpost\dexdrip\BluetoothScan.java:309,327,486,515`
+`app\xdrip\sources\com\eveningoutpost\dexdrip\sharemodels\ShareRest.java:260`
+`app\xdrip\sources\com\eveningoutpost\dexdrip\tidepool\AuthFlowOut.java:55`
+`app\xdrip\sources\com\eveningoutpost\dexdrip\watch\miband\MiBand.java:127`
+`app\xdrip\sources\com\eveningoutpost\dexdrip\utils\SdcardImportExport.java:32,186-187,205-208,372-389`
+`app\xdrip\resources\res\values\strings.xml:636`
+Chain:
+`PersistentStore.java:43` uses ordinary `getSharedPreferences("persist_internal_store", 0)`. `BluetoothScan.java:309` writes `share_key`. `BluetoothScan.java:327` writes `last_connected_device_address`. `BluetoothScan.java:486` writes Dexcom receiver serial. `BluetoothScan.java:515` writes `dex_txid`. `ShareRest.java:260` writes `dexcom_share_session_id`. `AuthFlowOut.java:55` writes Tidepool AuthState JSON. `MiBand.java:127` writes the MiBand auth key. That closes BR026. The export path then closes BR027. `SdcardImportExport.java:32` identifies the source file as the internal preferences XML. `SdcardImportExport.java:186-187` targets public Downloads `xDrip-export`. `SdcardImportExport.java:205-208` performs the copy. `SdcardImportExport.java:372-389` performs ordinary file copying with no filtering or encryption. `strings.xml:636` explicitly warns that the export may contain sensitive information and may be readable by any app. This is why both storage rules stay confirmed.
+Limits:
+No exported file sample was required for the source level confirmation.
+
+4. DB.
+Related rules: BR025 and BR017.
+Status: confirmed.
+Files:
+`app\xdrip\sources\com\eveningoutpost\dexdrip\models\BgReading.java:66,104-192`
+`app\xdrip\sources\com\eveningoutpost\dexdrip\models\Treatments.java`
+`app\xdrip\sources\com\eveningoutpost\dexdrip\models\BloodTest.java`
+`app\xdrip\sources\com\eveningoutpost\dexdrip\models\Sensor.java:30-32`
+`app\xdrip\resources\assets\migrations\23.sql`
+`app\xdrip\resources\assets\migrations\26.sql`
+`app\xdrip\resources\assets\migrations\31.sql`
+`app\xdrip\resources\assets\migrations\37.sql`
+`app\xdrip\resources\assets\migrations\38.sql`
+`app\xdrip\sources\com\eveningoutpost\dexdrip\cloud\backup\Backup.java:621,623`
+Chain:
+`BgReading.java:66` defines the `BgReadings` table. `BgReading.java:104-192` includes `calculated_value`, `filtered_data`, `raw_data`, `sensor_uuid`, `source_info`, and `timestamp`. `Treatments.java` includes carbs, insulin, notes, and `insulinJSON`. `BloodTest.java` includes blood values, source, and timestamp. `Sensor.java:30-32` includes `sensor_location`. The migration files confirm that these fields are meant to persist and evolve across versions. That closes BR025. The backup issue is separate. `Backup.java:621` uses `AES/CBC/PKCS5Padding`. `Backup.java:623` hardcodes AES key `5861bdb93f5ba8effa43c8ff7f26c3be`. The IV comes from backup metadata, but the key is fixed in code. That closes BR017. The two findings are related only in the sense that both concern sensitive data protection. They should still stay separate in reasoning.
+Limits:
+No database dump is required because the schema itself is explicit. No Google Drive session is required because the fixed key is visible in code.
+
+5. HTTP.
+Related rules: BR006 and BR012.
+Status: confirmed.
+Files:
+`app\xdrip\resources\AndroidManifest.xml:139`
+`app\xdrip\sources\com\eveningoutpost\dexdrip\services\XdripWebService.java:61-68,82-84,120-130,125,243,245,333,405-409`
+`app\xdrip\sources\com\eveningoutpost\dexdrip\services\broadcastservice\models\DesertComms.java`
+`app\xdrip\evidence\02_evidence_chains_zh.md:219-260`
+Chain:
+`AndroidManifest.xml:139` allows cleartext traffic. That alone is enough for BR006. The transport inconsistency chain is broader. `XdripWebService.java:61-68` starts only when the preference is enabled. `XdripWebService.java:82-84` can start both HTTP 17580 and HTTPS 17581. `XdripWebService.java:120-130` can bind to loopback only or to non loopback depending on settings. `XdripWebService.java:125` loads a hardcoded `"password"` when building the server material. `XdripWebService.java:243` hashes the configured webservice secret. `XdripWebService.java:245` allows no secret in some cases. `XdripWebService.java:333` sets `Access-Control-Allow-Origin: *`. `XdripWebService.java:405-409` returns null for empty secret. `DesertComms.java` chooses `http://` or `https://` from the `desert_use_https` preference. It builds `/sync/push`, `/sync/pull`, and `/sync/id` URLs. The earlier audit also notes `WixelReader.java` and `ParakeetHelper.java` allow `http://.../json.get` style data sources. This is why BR012 stays confirmed. The app has multiple transport stacks with materially different trust and exposure behavior.
+Limits:
+No single line alone proves the whole inconsistency. The confirmed item comes from the combined stack review.
+
+6. Components.
+Related rules: BR030, BR031, BR021, BR024, BR032, BR035 supported_hypothesis. BR033 and BR034 not_supported.
+Status: mixed.
+Files:
+`app\xdrip\resources\AndroidManifest.xml:191-193`
+`app\xdrip\resources\AndroidManifest.xml:318-319`
+`app\xdrip\resources\AndroidManifest.xml:358-360`
+`app\xdrip\sources\com\eveningoutpost\dexdrip\services\SyncService.java:19-21,25,32`
+`app\xdrip\sources\com\eveningoutpost\dexdrip\receiver\ExternalStatusBroadcastReceiver.java:14-16`
+`app\xdrip\sources\com\eveningoutpost\dexdrip\services\ExternalStatusService.java:49-50,63-64,69-73,79`
+`app\xdrip\sources\com\eveningoutpost\dexdrip\utilitymodels\InfoContentProvider.java:57-62,100-105,116`
+`app\xdrip\sources\com\eveningoutpost\dexdrip\tidepool\AuthFlowOut.java:113-114`
+`app\xdrip\sources\com\eveningoutpost\dexdrip\tidepool\AuthFlowIn.java`
+Chain:
+`AndroidManifest.xml:358-360` exports `SyncService`. `SyncService.java:19-21` enters `attemptSend()` on start. `SyncService.java:25` proceeds only if cloud or wear or database sync settings are enabled. `SyncService.java:32` launches `UploaderTask`. So the exported upload trigger is real, but conditional. That is why BR030 stays supported_hypothesis. `AndroidManifest.xml:318-319` exports `ExternalStatusBroadcastReceiver`. `ExternalStatusBroadcastReceiver.java:14-16` accepts external status and starts the service. `ExternalStatusService.java:49-50` reads the extra input. `ExternalStatusService.java:63-64` writes PersistentStore. `ExternalStatusService.java:69-73` creates `APStatus`. `ExternalStatusService.java:79` notifies the new status. So the external input chain is real, but unauthorized clinical effect was not shown. That keeps BR031 at supported_hypothesis. `AndroidManifest.xml:191-193` exports `InfoContentProvider`. `InfoContentProvider.java:57-62` failed to decompile cleanly in query. `InfoContentProvider.java:100-105` gates provider enablement on BlueJay native logic or preferences. `InfoContentProvider.java:116` builds the content URI trigger path. That is why BR021 and BR024 stay supported_hypothesis rather than confirmed. The Tidepool callback path is similar. The Manifest exposes `net.openid.appauth.RedirectUriReceiverActivity` for `xdrip://callback/tidepool`. `AuthFlowOut.java:113-114` uses AppAuth authorization code flow with PKCE `S256`. `AuthFlowIn.java` handles the response and updates AuthState. So the callback is sensitive, but the code also shows modern protection. That keeps BR032 and BR035 as supported_hypothesis and leaves BR033 and BR034 out.
+Limits:
+No crafted intent or broadcast was executed in the material. No provider query result was extracted. No OAuth abuse proof was shown.
+
+7. BLE and cloud.
+Related rules: BR091, BR095, BR096 supported_hypothesis, plus BLE attack style rules supported_hypothesis.
+Status: supported_hypothesis.
+Files:
+`app\xdrip\sources\com\eveningoutpost\dexdrip\BluetoothScan.java:73-78,191,217-245,282,327,331-336,342-421`
+`app\xdrip\sources\com\eveningoutpost\dexdrip\services\DexCollectionService.java:144-168,242-243,1209-1233,1269,1284,1511,1519,1545,1562`
+`app\xdrip\sources\com\eveningoutpost\dexdrip\models\BgReading.java:66,104-192`
+`app\xdrip\sources\com\eveningoutpost\dexdrip\tidepool\UploadChunk.java:51-56`
+`app\xdrip\sources\com\eveningoutpost\dexdrip\tidepool\TidepoolUploader.java:54,212`
+`app\xdrip\sources\com\eveningoutpost\dexdrip\sharemodels\ShareRest.java:204-208`
+Chain:
+`BluetoothScan.java:191` uses the old scan API. `BluetoothScan.java:282` uses the new `startScan(null, scanSettings, callback)` path without a scan filter list. `BluetoothScan.java:73-78` and `:217-245` store scan record bytes by device address. `BluetoothScan.java:331-336` writes active device name and address. `BluetoothScan.java:342-421` identifies devices by names and advertisement content such as Dexcom, bridge, drip, MiaoMiao, Watlaa, SweetReader, BLU, and Medtrum. That establishes the device selection surface. `DexCollectionService.java:144-168` hardcodes multiple service and characteristic UUIDs. `DexCollectionService.java:242-243` calls `discoverServices()`. `DexCollectionService.java:1209-1233` writes characteristics. `DexCollectionService.java:1269` uses `connectGatt(..., getTrustAutoConnect(), ...)`. `DexCollectionService.java:1284` defaults `bluetooth_trust_autoconnect` to true. `DexCollectionService.java:1511` and `:1519` create transmitter data from byte arrays. `DexCollectionService.java:1545` processes the transmitter data. `DexCollectionService.java:1562` calls `BgReading.create(...)`. `BgReading.java` then stores raw, filtered, calculated, sensor, source, and timestamp values. `UploadChunk.java:51-56` adds Treatments, BloodTests, and BgReadings into the Tidepool upload set. `TidepoolUploader.java:54` defines `/v1/datasets/{sessionId}/data`. `TidepoolUploader.java:212` uploads the JSON chunk. `ShareRest.java:204-208` also uploads BG records to Dexcom Share. This is a strong static chain from BLE input to local storage to cloud modules. The reason it stays below confirmed is the missing dynamic close. There is no live device replay. There is no full packet capture of Tidepool or Dexcom Share upload in the material. Some uploader internals were not fully decompiled.
+Limits:
+No successful malicious GATT injection was shown. No final cloud recipient payload was captured. The hypothesis is strong, but still a hypothesis.
+
+8. Boundaries.
+Related rules: BR028, BR042, BR072, BR097.
+Status: cleared.
+Notes:
+`allowBackup=false` means BR028 should stay out. The BLE scan handling is first party device functionality, not an ad SDK collection pattern. So BR042 and BR072 stay out. The app is focused on glucose and related treatment data, not pulse oximetry. So BR097 stays out. Keeping these negatives visible matters because the codebase already supports many other stronger conclusions.
+

@@ -1,0 +1,1747 @@
+database beginner rule catalog
+
+total rules
+83
+
+========================================================================
+rule01
+
+source id
+B023
+
+category
+app_static
+
+where to check
+Manifest permissions vs feature map
+
+summary
+static or code features: permission + missing/weak feature justification
+app data / resource / policy features: Look for matching field names, resources, assets, DB schemas, JSON keys, policy text, or SDK config.
+dynamic validation signal: optional runtime check only; static evidence is primary
+cloud / network signal: only relevant if a network/storage sink is found
+minimum evidence: At minimum: rule-specific artifact + file/class/resource location; confirmed findings need a sink or second corroborating artifact.
+no-device handling: Can be checked without physical BLE device from APK, Manifest, resources, code, and local artifacts.
+advisor-safe wording: Use as a manually checkable rule derived from full paper; do not claim the paper system was reproduced.
+
+========================================================================
+rule02
+
+source id
+B023
+
+category
+app_static
+
+where to check
+Manifest permissions vs API call sites
+
+summary
+static or code features: permission present + no first-party API use
+app data / resource / policy features: Look for matching field names, resources, assets, DB schemas, JSON keys, policy text, or SDK config.
+dynamic validation signal: optional runtime check only; static evidence is primary
+cloud / network signal: only relevant if a network/storage sink is found
+minimum evidence: At minimum: rule-specific artifact + file/class/resource location; confirmed findings need a sink or second corroborating artifact.
+no-device handling: Can be checked without physical BLE device from APK, Manifest, resources, code, and local artifacts.
+advisor-safe wording: Use as a manually checkable rule derived from full paper; do not claim the paper system was reproduced.
+
+========================================================================
+rule03
+
+source id
+B023
+
+category
+app_static
+
+where to check
+permission API call namespace analysis
+
+summary
+static or code features: SDK namespace uses sensitive API
+app data / resource / policy features: Look for matching field names, resources, assets, DB schemas, JSON keys, policy text, or SDK config.
+dynamic validation signal: optional runtime check only; static evidence is primary
+cloud / network signal: only relevant if a network/storage sink is found
+minimum evidence: At minimum: rule-specific artifact + file/class/resource location; confirmed findings need a sink or second corroborating artifact.
+no-device handling: Can be checked without physical BLE device from APK, Manifest, resources, code, and local artifacts.
+advisor-safe wording: Use as a manually checkable rule derived from full paper; do not claim the paper system was reproduced.
+
+========================================================================
+rule04
+
+source id
+B006
+
+category
+app_static
+
+where to check
+dangerous permission baseline
+
+summary
+static or code features: dangerous permissions beyond visible health features
+app data / resource / policy features: Look for matching field names, resources, assets, DB schemas, JSON keys, policy text, or SDK config.
+dynamic validation signal: optional runtime check only; static evidence is primary
+cloud / network signal: only relevant if a network/storage sink is found
+minimum evidence: At minimum: rule-specific artifact + file/class/resource location; confirmed findings need a sink or second corroborating artifact.
+no-device handling: Can be checked without physical BLE device from APK, Manifest, resources, code, and local artifacts.
+advisor-safe wording: Use as a manually checkable rule derived from full paper; do not claim the paper system was reproduced.
+
+========================================================================
+rule05
+
+source id
+B021
+
+category
+app_static
+
+where to check
+store/app metadata vs APK permissions
+
+summary
+static or code features: narrow description + broad permissions
+app data / resource / policy features: Look for matching field names, resources, assets, DB schemas, JSON keys, policy text, or SDK config.
+dynamic validation signal: optional runtime check only; static evidence is primary
+cloud / network signal: only relevant if a network/storage sink is found
+minimum evidence: At minimum: rule-specific artifact + file/class/resource location; confirmed findings need a sink or second corroborating artifact.
+no-device handling: Can be checked without physical BLE device from APK, Manifest, resources, code, and local artifacts.
+advisor-safe wording: Use as a manually checkable rule derived from full paper; do not claim the paper system was reproduced.
+
+========================================================================
+rule06
+
+source id
+B016
+
+category
+app_static
+
+where to check
+Manifest/network_security_config
+
+summary
+static or code features: usesCleartextTraffic or cleartext domain config
+app data / resource / policy features: Look for matching field names, resources, assets, DB schemas, JSON keys, policy text, or SDK config.
+dynamic validation signal: optional runtime check only; static evidence is primary
+cloud / network signal: only relevant if a network/storage sink is found
+minimum evidence: At minimum: rule-specific artifact + file/class/resource location; confirmed findings need a sink or second corroborating artifact.
+no-device handling: Can be checked without physical BLE device from APK, Manifest, resources, code, and local artifacts.
+advisor-safe wording: Use as a manually checkable rule derived from full paper; do not claim the paper system was reproduced.
+
+========================================================================
+rule07
+
+source id
+B025
+
+category
+app_static
+
+where to check
+network_security_config trust anchors
+
+summary
+static or code features: user/debug trust anchors in production sample
+app data / resource / policy features: Look for matching field names, resources, assets, DB schemas, JSON keys, policy text, or SDK config.
+dynamic validation signal: optional runtime check only; static evidence is primary
+cloud / network signal: only relevant if a network/storage sink is found
+minimum evidence: At minimum: rule-specific artifact + file/class/resource location; confirmed findings need a sink or second corroborating artifact.
+no-device handling: Can be checked without physical BLE device from APK, Manifest, resources, code, and local artifacts.
+advisor-safe wording: Use as a manually checkable rule derived from full paper; do not claim the paper system was reproduced.
+
+========================================================================
+rule08
+
+source id
+B025
+
+category
+app_static
+
+where to check
+domain-config cleartext policy
+
+summary
+static or code features: business domain with cleartext permitted
+app data / resource / policy features: Look for matching field names, resources, assets, DB schemas, JSON keys, policy text, or SDK config.
+dynamic validation signal: optional runtime check only; static evidence is primary
+cloud / network signal: only relevant if a network/storage sink is found
+minimum evidence: At minimum: rule-specific artifact + file/class/resource location; confirmed findings need a sink or second corroborating artifact.
+no-device handling: Can be checked without physical BLE device from APK, Manifest, resources, code, and local artifacts.
+advisor-safe wording: Use as a manually checkable rule derived from full paper; do not claim the paper system was reproduced.
+
+========================================================================
+rule09
+
+source id
+B030
+
+category
+app_static
+
+where to check
+X509TrustManager implementation
+
+summary
+static or code features: empty checkServerTrusted or swallowed exceptions
+app data / resource / policy features: Look for matching field names, resources, assets, DB schemas, JSON keys, policy text, or SDK config.
+dynamic validation signal: optional runtime check only; static evidence is primary
+cloud / network signal: only relevant if a network/storage sink is found
+minimum evidence: At minimum: rule-specific artifact + file/class/resource location; confirmed findings need a sink or second corroborating artifact.
+no-device handling: Can be checked without physical BLE device from APK, Manifest, resources, code, and local artifacts.
+advisor-safe wording: Use as a manually checkable rule derived from full paper; do not claim the paper system was reproduced.
+
+========================================================================
+rule10
+
+source id
+B030
+
+category
+app_static
+
+where to check
+HostnameVerifier implementation
+
+summary
+static or code features: verify returns true or ignores hostname
+app data / resource / policy features: Look for matching field names, resources, assets, DB schemas, JSON keys, policy text, or SDK config.
+dynamic validation signal: optional runtime check only; static evidence is primary
+cloud / network signal: only relevant if a network/storage sink is found
+minimum evidence: At minimum: rule-specific artifact + file/class/resource location; confirmed findings need a sink or second corroborating artifact.
+no-device handling: Can be checked without physical BLE device from APK, Manifest, resources, code, and local artifacts.
+advisor-safe wording: Use as a manually checkable rule derived from full paper; do not claim the paper system was reproduced.
+
+========================================================================
+rule11
+
+source id
+B030
+
+category
+app_static
+
+where to check
+TLS exception handling branches
+
+summary
+static or code features: SSLException/CertificateException ignored or HTTP fallback
+app data / resource / policy features: Look for matching field names, resources, assets, DB schemas, JSON keys, policy text, or SDK config.
+dynamic validation signal: optional runtime check only; static evidence is primary
+cloud / network signal: only relevant if a network/storage sink is found
+minimum evidence: At minimum: rule-specific artifact + file/class/resource location; confirmed findings need a sink or second corroborating artifact.
+no-device handling: Can be checked without physical BLE device from APK, Manifest, resources, code, and local artifacts.
+advisor-safe wording: Use as a manually checkable rule derived from full paper; do not claim the paper system was reproduced.
+
+========================================================================
+rule12
+
+source id
+B010
+
+category
+app_static
+
+where to check
+network client constructors
+
+summary
+static or code features: multiple clients with inconsistent security settings
+app data / resource / policy features: Look for matching field names, resources, assets, DB schemas, JSON keys, policy text, or SDK config.
+dynamic validation signal: optional runtime check only; static evidence is primary
+cloud / network signal: only relevant if a network/storage sink is found
+minimum evidence: At minimum: rule-specific artifact + file/class/resource location; confirmed findings need a sink or second corroborating artifact.
+no-device handling: Can be checked without physical BLE device from APK, Manifest, resources, code, and local artifacts.
+advisor-safe wording: Use as a manually checkable rule derived from full paper; do not claim the paper system was reproduced.
+
+========================================================================
+rule13
+
+source id
+B010
+
+category
+app_static
+
+where to check
+strings/resources/code URLs
+
+summary
+static or code features: http:// endpoint with login/sync/upload/health semantics
+app data / resource / policy features: Look for matching field names, resources, assets, DB schemas, JSON keys, policy text, or SDK config.
+dynamic validation signal: optional runtime check only; static evidence is primary
+cloud / network signal: only relevant if a network/storage sink is found
+minimum evidence: At minimum: rule-specific artifact + file/class/resource location; confirmed findings need a sink or second corroborating artifact.
+no-device handling: Can be checked without physical BLE device from APK, Manifest, resources, code, and local artifacts.
+advisor-safe wording: Use as a manually checkable rule derived from full paper; do not claim the paper system was reproduced.
+
+========================================================================
+rule14
+
+source id
+B022
+
+category
+app_static
+
+where to check
+identifier API call sites
+
+summary
+static or code features: ANDROID_ID/AdvertisingId/Telephony ID access
+app data / resource / policy features: Look for matching field names, resources, assets, DB schemas, JSON keys, policy text, or SDK config.
+dynamic validation signal: optional runtime check only; static evidence is primary
+cloud / network signal: only relevant if a network/storage sink is found
+minimum evidence: At minimum: rule-specific artifact + file/class/resource location; confirmed findings need a sink or second corroborating artifact.
+no-device handling: Can be checked without physical BLE device from APK, Manifest, resources, code, and local artifacts.
+advisor-safe wording: Use as a manually checkable rule derived from full paper; do not claim the paper system was reproduced.
+
+========================================================================
+rule15
+
+source id
+B022
+
+category
+app_static
+
+where to check
+device info aggregation code
+
+summary
+static or code features: Build/model/locale/timezone/screen fields combined
+app data / resource / policy features: Look for matching field names, resources, assets, DB schemas, JSON keys, policy text, or SDK config.
+dynamic validation signal: optional runtime check only; static evidence is primary
+cloud / network signal: only relevant if a network/storage sink is found
+minimum evidence: At minimum: rule-specific artifact + file/class/resource location; confirmed findings need a sink or second corroborating artifact.
+no-device handling: Can be checked without physical BLE device from APK, Manifest, resources, code, and local artifacts.
+advisor-safe wording: Use as a manually checkable rule derived from full paper; do not claim the paper system was reproduced.
+
+========================================================================
+rule16
+
+source id
+B006
+
+category
+app_static
+
+where to check
+resources/assets/code constants
+
+summary
+static or code features: api_key/secret/client_secret/app_key in APK
+app data / resource / policy features: Look for matching field names, resources, assets, DB schemas, JSON keys, policy text, or SDK config.
+dynamic validation signal: optional runtime check only; static evidence is primary
+cloud / network signal: only relevant if a network/storage sink is found
+minimum evidence: At minimum: rule-specific artifact + file/class/resource location; confirmed findings need a sink or second corroborating artifact.
+no-device handling: Can be checked without physical BLE device from APK, Manifest, resources, code, and local artifacts.
+advisor-safe wording: Use as a manually checkable rule derived from full paper; do not claim the paper system was reproduced.
+
+========================================================================
+rule17
+
+source id
+B006
+
+category
+app_static
+
+where to check
+crypto constructors and constants
+
+summary
+static or code features: SecretKeySpec/IvParameterSpec with fixed constants
+app data / resource / policy features: Look for matching field names, resources, assets, DB schemas, JSON keys, policy text, or SDK config.
+dynamic validation signal: optional runtime check only; static evidence is primary
+cloud / network signal: only relevant if a network/storage sink is found
+minimum evidence: At minimum: rule-specific artifact + file/class/resource location; confirmed findings need a sink or second corroborating artifact.
+no-device handling: Can be checked without physical BLE device from APK, Manifest, resources, code, and local artifacts.
+advisor-safe wording: Use as a manually checkable rule derived from full paper; do not claim the paper system was reproduced.
+
+========================================================================
+rule18
+
+source id
+B001
+
+category
+app_static
+
+where to check
+models/entities/DTOs
+
+summary
+static or code features: health/profile/measurement fields in code
+app data / resource / policy features: Look for matching field names, resources, assets, DB schemas, JSON keys, policy text, or SDK config.
+dynamic validation signal: optional runtime check only; static evidence is primary
+cloud / network signal: only relevant if a network/storage sink is found
+minimum evidence: At minimum: rule-specific artifact + file/class/resource location; confirmed findings need a sink or second corroborating artifact.
+no-device handling: Can be checked without physical BLE device from APK, Manifest, resources, code, and local artifacts.
+advisor-safe wording: Use as a manually checkable rule derived from full paper; do not claim the paper system was reproduced.
+
+========================================================================
+rule19
+
+source id
+B011
+
+category
+app_static
+
+where to check
+medication models and storage schemas
+
+summary
+static or code features: medication/dose/prescription/reminder fields
+app data / resource / policy features: Look for matching field names, resources, assets, DB schemas, JSON keys, policy text, or SDK config.
+dynamic validation signal: optional runtime check only; static evidence is primary
+cloud / network signal: only relevant if a network/storage sink is found
+minimum evidence: At minimum: rule-specific artifact + file/class/resource location; confirmed findings need a sink or second corroborating artifact.
+no-device handling: Can be checked without physical BLE device from APK, Manifest, resources, code, and local artifacts.
+advisor-safe wording: Use as a manually checkable rule derived from full paper; do not claim the paper system was reproduced.
+
+========================================================================
+rule20
+
+source id
+B012
+
+category
+app_static
+
+where to check
+mental-health forms/models
+
+summary
+static or code features: mood/depression/anxiety/journal/survey fields
+app data / resource / policy features: Look for matching field names, resources, assets, DB schemas, JSON keys, policy text, or SDK config.
+dynamic validation signal: optional runtime check only; static evidence is primary
+cloud / network signal: only relevant if a network/storage sink is found
+minimum evidence: At minimum: rule-specific artifact + file/class/resource location; confirmed findings need a sink or second corroborating artifact.
+no-device handling: Can be checked without physical BLE device from APK, Manifest, resources, code, and local artifacts.
+advisor-safe wording: Use as a manually checkable rule derived from full paper; do not claim the paper system was reproduced.
+
+========================================================================
+rule21
+
+source id
+B024
+
+category
+app_static
+
+where to check
+Manifest provider + query method
+
+summary
+static or code features: exported or permissionless provider read path
+app data / resource / policy features: Look for matching field names, resources, assets, DB schemas, JSON keys, policy text, or SDK config.
+dynamic validation signal: optional runtime check only; static evidence is primary
+cloud / network signal: only relevant if a network/storage sink is found
+minimum evidence: At minimum: rule-specific artifact + file/class/resource location; confirmed findings need a sink or second corroborating artifact.
+no-device handling: Can be checked without physical BLE device from APK, Manifest, resources, code, and local artifacts.
+advisor-safe wording: Use as a manually checkable rule derived from full paper; do not claim the paper system was reproduced.
+
+========================================================================
+rule22
+
+source id
+B024
+
+category
+app_static
+
+where to check
+provider mutation methods
+
+summary
+static or code features: insert/update/delete reachable without permission
+app data / resource / policy features: Look for matching field names, resources, assets, DB schemas, JSON keys, policy text, or SDK config.
+dynamic validation signal: optional runtime check only; static evidence is primary
+cloud / network signal: only relevant if a network/storage sink is found
+minimum evidence: At minimum: rule-specific artifact + file/class/resource location; confirmed findings need a sink or second corroborating artifact.
+no-device handling: Can be checked without physical BLE device from APK, Manifest, resources, code, and local artifacts.
+advisor-safe wording: Use as a manually checkable rule derived from full paper; do not claim the paper system was reproduced.
+
+========================================================================
+rule23
+
+source id
+B024
+
+category
+app_static
+
+where to check
+path-permission and UriMatcher
+
+summary
+static or code features: sensitive paths not separately protected
+app data / resource / policy features: Look for matching field names, resources, assets, DB schemas, JSON keys, policy text, or SDK config.
+dynamic validation signal: optional runtime check only; static evidence is primary
+cloud / network signal: only relevant if a network/storage sink is found
+minimum evidence: At minimum: rule-specific artifact + file/class/resource location; confirmed findings need a sink or second corroborating artifact.
+no-device handling: Can be checked without physical BLE device from APK, Manifest, resources, code, and local artifacts.
+advisor-safe wording: Use as a manually checkable rule derived from full paper; do not claim the paper system was reproduced.
+
+========================================================================
+rule24
+
+source id
+B024
+
+category
+app_static
+
+where to check
+provider authority and permission attrs
+
+summary
+static or code features: public authority + no read/write permission
+app data / resource / policy features: Look for matching field names, resources, assets, DB schemas, JSON keys, policy text, or SDK config.
+dynamic validation signal: optional runtime check only; static evidence is primary
+cloud / network signal: only relevant if a network/storage sink is found
+minimum evidence: At minimum: rule-specific artifact + file/class/resource location; confirmed findings need a sink or second corroborating artifact.
+no-device handling: Can be checked without physical BLE device from APK, Manifest, resources, code, and local artifacts.
+advisor-safe wording: Use as a manually checkable rule derived from full paper; do not claim the paper system was reproduced.
+
+========================================================================
+rule25
+
+source id
+B005
+
+category
+app_static
+
+where to check
+Room/SQLiteOpenHelper/entities
+
+summary
+static or code features: sensitive DB fields without encryption wrapper
+app data / resource / policy features: Look for matching field names, resources, assets, DB schemas, JSON keys, policy text, or SDK config.
+dynamic validation signal: optional runtime check only; static evidence is primary
+cloud / network signal: only relevant if a network/storage sink is found
+minimum evidence: At minimum: rule-specific artifact + file/class/resource location; confirmed findings need a sink or second corroborating artifact.
+no-device handling: Can be checked without physical BLE device from APK, Manifest, resources, code, and local artifacts.
+advisor-safe wording: Use as a manually checkable rule derived from full paper; do not claim the paper system was reproduced.
+
+========================================================================
+rule26
+
+source id
+B002
+
+category
+app_static
+
+where to check
+SharedPreferences writes
+
+summary
+static or code features: token/user/health/device values in prefs
+app data / resource / policy features: Look for matching field names, resources, assets, DB schemas, JSON keys, policy text, or SDK config.
+dynamic validation signal: optional runtime check only; static evidence is primary
+cloud / network signal: only relevant if a network/storage sink is found
+minimum evidence: At minimum: rule-specific artifact + file/class/resource location; confirmed findings need a sink or second corroborating artifact.
+no-device handling: Can be checked without physical BLE device from APK, Manifest, resources, code, and local artifacts.
+advisor-safe wording: Use as a manually checkable rule derived from full paper; do not claim the paper system was reproduced.
+
+========================================================================
+rule27
+
+source id
+B002
+
+category
+app_static
+
+where to check
+external storage file APIs
+
+summary
+static or code features: report/health/log/export written outside app-private area
+app data / resource / policy features: Look for matching field names, resources, assets, DB schemas, JSON keys, policy text, or SDK config.
+dynamic validation signal: optional runtime check only; static evidence is primary
+cloud / network signal: only relevant if a network/storage sink is found
+minimum evidence: At minimum: rule-specific artifact + file/class/resource location; confirmed findings need a sink or second corroborating artifact.
+no-device handling: Can be checked without physical BLE device from APK, Manifest, resources, code, and local artifacts.
+advisor-safe wording: Use as a manually checkable rule derived from full paper; do not claim the paper system was reproduced.
+
+========================================================================
+rule28
+
+source id
+B014
+
+category
+app_static
+
+where to check
+Manifest backup flags + local data
+
+summary
+static or code features: allowBackup/dataExtractionRules weak + sensitive storage
+app data / resource / policy features: Look for matching field names, resources, assets, DB schemas, JSON keys, policy text, or SDK config.
+dynamic validation signal: optional runtime check only; static evidence is primary
+cloud / network signal: only relevant if a network/storage sink is found
+minimum evidence: At minimum: rule-specific artifact + file/class/resource location; confirmed findings need a sink or second corroborating artifact.
+no-device handling: Can be checked without physical BLE device from APK, Manifest, resources, code, and local artifacts.
+advisor-safe wording: Use as a manually checkable rule derived from full paper; do not claim the paper system was reproduced.
+
+========================================================================
+rule29
+
+source id
+B016
+
+category
+app_static
+
+where to check
+exported Activity handlers
+
+summary
+static or code features: external entry reaches account/device/report page
+app data / resource / policy features: Look for matching field names, resources, assets, DB schemas, JSON keys, policy text, or SDK config.
+dynamic validation signal: optional runtime check only; static evidence is primary
+cloud / network signal: only relevant if a network/storage sink is found
+minimum evidence: At minimum: rule-specific artifact + file/class/resource location; confirmed findings need a sink or second corroborating artifact.
+no-device handling: Can be checked without physical BLE device from APK, Manifest, resources, code, and local artifacts.
+advisor-safe wording: Use as a manually checkable rule derived from full paper; do not claim the paper system was reproduced.
+
+========================================================================
+rule30
+
+source id
+B016
+
+category
+app_static
+
+where to check
+exported Service handlers
+
+summary
+static or code features: service triggers sync/upload/device command
+app data / resource / policy features: Look for matching field names, resources, assets, DB schemas, JSON keys, policy text, or SDK config.
+dynamic validation signal: optional runtime check only; static evidence is primary
+cloud / network signal: only relevant if a network/storage sink is found
+minimum evidence: At minimum: rule-specific artifact + file/class/resource location; confirmed findings need a sink or second corroborating artifact.
+no-device handling: Can be checked without physical BLE device from APK, Manifest, resources, code, and local artifacts.
+advisor-safe wording: Use as a manually checkable rule derived from full paper; do not claim the paper system was reproduced.
+
+========================================================================
+rule31
+
+source id
+B016
+
+category
+app_static
+
+where to check
+receiver action handlers
+
+summary
+static or code features: external broadcast reaches sensitive module
+app data / resource / policy features: Look for matching field names, resources, assets, DB schemas, JSON keys, policy text, or SDK config.
+dynamic validation signal: optional runtime check only; static evidence is primary
+cloud / network signal: only relevant if a network/storage sink is found
+minimum evidence: At minimum: rule-specific artifact + file/class/resource location; confirmed findings need a sink or second corroborating artifact.
+no-device handling: Can be checked without physical BLE device from APK, Manifest, resources, code, and local artifacts.
+advisor-safe wording: Use as a manually checkable rule derived from full paper; do not claim the paper system was reproduced.
+
+========================================================================
+rule32
+
+source id
+B026
+
+category
+app_static
+
+where to check
+intent-filter custom scheme
+
+summary
+static or code features: BROWSABLE private scheme for login/bind/share
+app data / resource / policy features: Look for matching field names, resources, assets, DB schemas, JSON keys, policy text, or SDK config.
+dynamic validation signal: optional runtime check only; static evidence is primary
+cloud / network signal: only relevant if a network/storage sink is found
+minimum evidence: At minimum: rule-specific artifact + file/class/resource location; confirmed findings need a sink or second corroborating artifact.
+no-device handling: Can be checked without physical BLE device from APK, Manifest, resources, code, and local artifacts.
+advisor-safe wording: Use as a manually checkable rule derived from full paper; do not claim the paper system was reproduced.
+
+========================================================================
+rule33
+
+source id
+B026
+
+category
+app_static
+
+where to check
+autoVerify and URI validation
+
+summary
+static or code features: https link handler lacks strict verification
+app data / resource / policy features: Look for matching field names, resources, assets, DB schemas, JSON keys, policy text, or SDK config.
+dynamic validation signal: optional runtime check only; static evidence is primary
+cloud / network signal: only relevant if a network/storage sink is found
+minimum evidence: At minimum: rule-specific artifact + file/class/resource location; confirmed findings need a sink or second corroborating artifact.
+no-device handling: Can be checked without physical BLE device from APK, Manifest, resources, code, and local artifacts.
+advisor-safe wording: Use as a manually checkable rule derived from full paper; do not claim the paper system was reproduced.
+
+========================================================================
+rule34
+
+source id
+B026
+
+category
+app_static
+
+where to check
+getData/query parameter data flow
+
+summary
+static or code features: URI params reach API/DB/device command
+app data / resource / policy features: Look for matching field names, resources, assets, DB schemas, JSON keys, policy text, or SDK config.
+dynamic validation signal: optional runtime check only; static evidence is primary
+cloud / network signal: only relevant if a network/storage sink is found
+minimum evidence: At minimum: rule-specific artifact + file/class/resource location; confirmed findings need a sink or second corroborating artifact.
+no-device handling: Can be checked without physical BLE device from APK, Manifest, resources, code, and local artifacts.
+advisor-safe wording: Use as a manually checkable rule derived from full paper; do not claim the paper system was reproduced.
+
+========================================================================
+rule35
+
+source id
+B026
+
+category
+app_static
+
+where to check
+deep-link handler auth checks
+
+summary
+static or code features: sensitive screen/action opened before auth check
+app data / resource / policy features: Look for matching field names, resources, assets, DB schemas, JSON keys, policy text, or SDK config.
+dynamic validation signal: optional runtime check only; static evidence is primary
+cloud / network signal: only relevant if a network/storage sink is found
+minimum evidence: At minimum: rule-specific artifact + file/class/resource location; confirmed findings need a sink or second corroborating artifact.
+no-device handling: Can be checked without physical BLE device from APK, Manifest, resources, code, and local artifacts.
+advisor-safe wording: Use as a manually checkable rule derived from full paper; do not claim the paper system was reproduced.
+
+========================================================================
+rule36
+
+source id
+B007
+
+category
+app_static
+
+where to check
+Application/provider SDK init
+
+summary
+static or code features: SDK initialization before feature use
+app data / resource / policy features: Look for matching field names, resources, assets, DB schemas, JSON keys, policy text, or SDK config.
+dynamic validation signal: optional runtime check only; static evidence is primary
+cloud / network signal: only relevant if a network/storage sink is found
+minimum evidence: At minimum: rule-specific artifact + file/class/resource location; confirmed findings need a sink or second corroborating artifact.
+no-device handling: Can be checked without physical BLE device from APK, Manifest, resources, code, and local artifacts.
+advisor-safe wording: Use as a manually checkable rule derived from full paper; do not claim the paper system was reproduced.
+
+========================================================================
+rule37
+
+source id
+B007
+
+category
+app_static
+
+where to check
+SDK privacy configuration calls
+
+summary
+static or code features: auto logging/tracking not explicitly disabled or gated
+app data / resource / policy features: Look for matching field names, resources, assets, DB schemas, JSON keys, policy text, or SDK config.
+dynamic validation signal: optional runtime check only; static evidence is primary
+cloud / network signal: only relevant if a network/storage sink is found
+minimum evidence: At minimum: rule-specific artifact + file/class/resource location; confirmed findings need a sink or second corroborating artifact.
+no-device handling: Can be checked without physical BLE device from APK, Manifest, resources, code, and local artifacts.
+advisor-safe wording: Use as a manually checkable rule derived from full paper; do not claim the paper system was reproduced.
+
+========================================================================
+rule38
+
+source id
+B008
+
+category
+app_static
+
+where to check
+Bluetooth scan APIs in SDK namespace
+
+summary
+static or code features: BluetoothLeScanner/startScan under third-party package
+app data / resource / policy features: Look for matching field names, resources, assets, DB schemas, JSON keys, policy text, or SDK config.
+dynamic validation signal: optional runtime check only; static evidence is primary
+cloud / network signal: only relevant if a network/storage sink is found
+minimum evidence: At minimum: rule-specific artifact + file/class/resource location; confirmed findings need a sink or second corroborating artifact.
+no-device handling: Can be checked without physical BLE device from APK, Manifest, resources, code, and local artifacts.
+advisor-safe wording: Use as a manually checkable rule derived from full paper; do not claim the paper system was reproduced.
+
+========================================================================
+rule39
+
+source id
+B008
+
+category
+app_static
+
+where to check
+scan-result serialization
+
+summary
+static or code features: SSID/BSSID/RSSI/beacon/deviceName serialized
+app data / resource / policy features: Look for matching field names, resources, assets, DB schemas, JSON keys, policy text, or SDK config.
+dynamic validation signal: optional runtime check only; static evidence is primary
+cloud / network signal: only relevant if a network/storage sink is found
+minimum evidence: At minimum: rule-specific artifact + file/class/resource location; confirmed findings need a sink or second corroborating artifact.
+no-device handling: Can be checked without physical BLE device from APK, Manifest, resources, code, and local artifacts.
+advisor-safe wording: Use as a manually checkable rule derived from full paper; do not claim the paper system was reproduced.
+
+========================================================================
+rule40
+
+source id
+B008
+
+category
+app_static
+
+where to check
+scan permissions + UI/function map
+
+summary
+static or code features: nearby/location permission without clear device feature
+app data / resource / policy features: Look for matching field names, resources, assets, DB schemas, JSON keys, policy text, or SDK config.
+dynamic validation signal: optional runtime check only; static evidence is primary
+cloud / network signal: only relevant if a network/storage sink is found
+minimum evidence: At minimum: rule-specific artifact + file/class/resource location; confirmed findings need a sink or second corroborating artifact.
+no-device handling: Can be checked without physical BLE device from APK, Manifest, resources, code, and local artifacts.
+advisor-safe wording: Use as a manually checkable rule derived from full paper; do not claim the paper system was reproduced.
+
+========================================================================
+rule41
+
+source id
+B001
+
+category
+app_static
+
+where to check
+Log/Timber/print statements
+
+summary
+static or code features: token/measurement/profile variables in logs
+app data / resource / policy features: Look for matching field names, resources, assets, DB schemas, JSON keys, policy text, or SDK config.
+dynamic validation signal: optional runtime check only; static evidence is primary
+cloud / network signal: only relevant if a network/storage sink is found
+minimum evidence: At minimum: rule-specific artifact + file/class/resource location; confirmed findings need a sink or second corroborating artifact.
+no-device handling: Can be checked without physical BLE device from APK, Manifest, resources, code, and local artifacts.
+advisor-safe wording: Use as a manually checkable rule derived from full paper; do not claim the paper system was reproduced.
+
+========================================================================
+rule42
+
+source id
+B021
+
+category
+app_static
+
+where to check
+resources/store metadata
+
+summary
+static or code features: privacy URL missing, empty, or dead in local metadata
+app data / resource / policy features: Look for matching field names, resources, assets, DB schemas, JSON keys, policy text, or SDK config.
+dynamic validation signal: optional runtime check only; static evidence is primary
+cloud / network signal: only relevant if a network/storage sink is found
+minimum evidence: At minimum: rule-specific artifact + file/class/resource location; confirmed findings need a sink or second corroborating artifact.
+no-device handling: Can be checked without physical BLE device from APK, Manifest, resources, code, and local artifacts.
+advisor-safe wording: Use as a manually checkable rule derived from full paper; do not claim the paper system was reproduced.
+
+========================================================================
+rule43
+
+source id
+B013
+
+category
+app_static
+
+where to check
+privacy policy text
+
+summary
+static or code features: policy omits health/device/location/BLE data categories
+app data / resource / policy features: Look for matching field names, resources, assets, DB schemas, JSON keys, policy text, or SDK config.
+dynamic validation signal: optional runtime check only; static evidence is primary
+cloud / network signal: only relevant if a network/storage sink is found
+minimum evidence: At minimum: rule-specific artifact + file/class/resource location; confirmed findings need a sink or second corroborating artifact.
+no-device handling: Can be checked without physical BLE device from APK, Manifest, resources, code, and local artifacts.
+advisor-safe wording: Use as a manually checkable rule derived from full paper; do not claim the paper system was reproduced.
+
+========================================================================
+rule44
+
+source id
+B013
+
+category
+app_static
+
+where to check
+privacy policy vs SDK/domain list
+
+summary
+static or code features: third-party sharing not specifically disclosed
+app data / resource / policy features: Look for matching field names, resources, assets, DB schemas, JSON keys, policy text, or SDK config.
+dynamic validation signal: optional runtime check only; static evidence is primary
+cloud / network signal: only relevant if a network/storage sink is found
+minimum evidence: At minimum: rule-specific artifact + file/class/resource location; confirmed findings need a sink or second corroborating artifact.
+no-device handling: Can be checked without physical BLE device from APK, Manifest, resources, code, and local artifacts.
+advisor-safe wording: Use as a manually checkable rule derived from full paper; do not claim the paper system was reproduced.
+
+========================================================================
+rule45
+
+source id
+B014
+
+category
+app_static
+
+where to check
+report/evidence organization
+
+summary
+static or code features: finding lacks file/class/field/rule evidence
+app data / resource / policy features: Look for matching field names, resources, assets, DB schemas, JSON keys, policy text, or SDK config.
+dynamic validation signal: optional runtime check only; static evidence is primary
+cloud / network signal: only relevant if a network/storage sink is found
+minimum evidence: At minimum: rule-specific artifact + file/class/resource location; confirmed findings need a sink or second corroborating artifact.
+no-device handling: Can be checked without physical BLE device from APK, Manifest, resources, code, and local artifacts.
+advisor-safe wording: Use as a manually checkable rule derived from full paper; do not claim the paper system was reproduced.
+
+========================================================================
+rule46
+
+source id
+B022
+
+category
+app_static
+
+where to check
+package namespace inventory
+
+summary
+static or code features: finding not separated by first-party vs SDK package
+app data / resource / policy features: Look for matching field names, resources, assets, DB schemas, JSON keys, policy text, or SDK config.
+dynamic validation signal: optional runtime check only; static evidence is primary
+cloud / network signal: only relevant if a network/storage sink is found
+minimum evidence: At minimum: rule-specific artifact + file/class/resource location; confirmed findings need a sink or second corroborating artifact.
+no-device handling: Can be checked without physical BLE device from APK, Manifest, resources, code, and local artifacts.
+advisor-safe wording: Use as a manually checkable rule derived from full paper; do not claim the paper system was reproduced.
+
+========================================================================
+rule47
+
+source id
+B006
+
+category
+app_static
+
+where to check
+targetSdk + intent-filter exported behavior
+
+summary
+static or code features: component externally reachable because of exported/default behavior
+app data / resource / policy features: Look for matching field names, resources, assets, DB schemas, JSON keys, policy text, or SDK config.
+dynamic validation signal: optional runtime check only; static evidence is primary
+cloud / network signal: only relevant if a network/storage sink is found
+minimum evidence: At minimum: rule-specific artifact + file/class/resource location; confirmed findings need a sink or second corroborating artifact.
+no-device handling: Can be checked without physical BLE device from APK, Manifest, resources, code, and local artifacts.
+advisor-safe wording: Use as a manually checkable rule derived from full paper; do not claim the paper system was reproduced.
+
+========================================================================
+rule48
+
+source id
+B016
+
+category
+app_static
+
+where to check
+environment config in assets/resources
+
+summary
+static or code features: env/baseUrl/channel flags allow switching backend
+app data / resource / policy features: Look for matching field names, resources, assets, DB schemas, JSON keys, policy text, or SDK config.
+dynamic validation signal: optional runtime check only; static evidence is primary
+cloud / network signal: only relevant if a network/storage sink is found
+minimum evidence: At minimum: rule-specific artifact + file/class/resource location; confirmed findings need a sink or second corroborating artifact.
+no-device handling: Can be checked without physical BLE device from APK, Manifest, resources, code, and local artifacts.
+advisor-safe wording: Use as a manually checkable rule derived from full paper; do not claim the paper system was reproduced.
+
+========================================================================
+rule49
+
+source id
+B028
+
+category
+ble_connection
+
+where to check
+BluetoothGatt.writeCharacteristic path
+
+summary
+static or code features: write payload builder lacks AES/HMAC/signature wrapper
+app data / resource / policy features: Look for matching field names, resources, assets, DB schemas, JSON keys, policy text, or SDK config.
+dynamic validation signal: no-device runtime confirmation usually unavailable
+cloud / network signal: check whether BLE-derived data later enters upload/sync models
+minimum evidence: At minimum: rule-specific artifact + file/class/resource location; confirmed findings need a sink or second corroborating artifact.
+no-device handling: Without a device, do not mark confirmed; use supported_hypothesis unless code path is fully explicit.
+advisor-safe wording: Use as a manually checkable rule derived from full paper; do not claim the paper system was reproduced.
+
+========================================================================
+rule50
+
+source id
+B028
+
+category
+ble_connection
+
+where to check
+notification/read callback path
+
+summary
+static or code features: parsed measurement accepted without MAC/signature/range proof
+app data / resource / policy features: Look for matching field names, resources, assets, DB schemas, JSON keys, policy text, or SDK config.
+dynamic validation signal: no-device runtime confirmation usually unavailable
+cloud / network signal: check whether BLE-derived data later enters upload/sync models
+minimum evidence: At minimum: rule-specific artifact + file/class/resource location; confirmed findings need a sink or second corroborating artifact.
+no-device handling: Without a device, do not mark confirmed; use supported_hypothesis unless code path is fully explicit.
+advisor-safe wording: Use as a manually checkable rule derived from full paper; do not claim the paper system was reproduced.
+
+========================================================================
+rule51
+
+source id
+B028
+
+category
+ble_connection
+
+where to check
+BLE command constants
+
+summary
+static or code features: hardcoded byte arrays/opcodes for sensitive commands
+app data / resource / policy features: Look for matching field names, resources, assets, DB schemas, JSON keys, policy text, or SDK config.
+dynamic validation signal: no-device runtime confirmation usually unavailable
+cloud / network signal: check whether BLE-derived data later enters upload/sync models
+minimum evidence: At minimum: rule-specific artifact + file/class/resource location; confirmed findings need a sink or second corroborating artifact.
+no-device handling: Without a device, do not mark confirmed; use supported_hypothesis unless code path is fully explicit.
+advisor-safe wording: Use as a manually checkable rule derived from full paper; do not claim the paper system was reproduced.
+
+========================================================================
+rule52
+
+source id
+B028
+
+category
+ble_connection
+
+where to check
+scan filter logic
+
+summary
+static or code features: deviceName/MAC prefix used as primary identity
+app data / resource / policy features: Look for matching field names, resources, assets, DB schemas, JSON keys, policy text, or SDK config.
+dynamic validation signal: no-device runtime confirmation usually unavailable
+cloud / network signal: check whether BLE-derived data later enters upload/sync models
+minimum evidence: At minimum: rule-specific artifact + file/class/resource location; confirmed findings need a sink or second corroborating artifact.
+no-device handling: Without a device, do not mark confirmed; use supported_hypothesis unless code path is fully explicit.
+advisor-safe wording: Use as a manually checkable rule derived from full paper; do not claim the paper system was reproduced.
+
+========================================================================
+rule53
+
+source id
+B028
+
+category
+ble_connection
+
+where to check
+connection state machine
+
+summary
+static or code features: onServicesDiscovered immediately performs sensitive read/write
+app data / resource / policy features: Look for matching field names, resources, assets, DB schemas, JSON keys, policy text, or SDK config.
+dynamic validation signal: no-device runtime confirmation usually unavailable
+cloud / network signal: check whether BLE-derived data later enters upload/sync models
+minimum evidence: At minimum: rule-specific artifact + file/class/resource location; confirmed findings need a sink or second corroborating artifact.
+no-device handling: Without a device, do not mark confirmed; use supported_hypothesis unless code path is fully explicit.
+advisor-safe wording: Use as a manually checkable rule derived from full paper; do not claim the paper system was reproduced.
+
+========================================================================
+rule54
+
+source id
+B028
+
+category
+ble_connection
+
+where to check
+UUID maps/constants
+
+summary
+static or code features: custom service/characteristic UUID table exposes protocol surface
+app data / resource / policy features: Look for matching field names, resources, assets, DB schemas, JSON keys, policy text, or SDK config.
+dynamic validation signal: no-device runtime confirmation usually unavailable
+cloud / network signal: check whether BLE-derived data later enters upload/sync models
+minimum evidence: At minimum: rule-specific artifact + file/class/resource location; confirmed findings need a sink or second corroborating artifact.
+no-device handling: Without a device, do not mark confirmed; use supported_hypothesis unless code path is fully explicit.
+advisor-safe wording: Use as a manually checkable rule derived from full paper; do not claim the paper system was reproduced.
+
+========================================================================
+rule55
+
+source id
+B029
+
+category
+ble_connection
+
+where to check
+authorization preconditions
+
+summary
+static or code features: no app-specific token/key/attestation before BLE operations
+app data / resource / policy features: Look for matching field names, resources, assets, DB schemas, JSON keys, policy text, or SDK config.
+dynamic validation signal: no-device runtime confirmation usually unavailable
+cloud / network signal: check whether BLE-derived data later enters upload/sync models
+minimum evidence: At minimum: rule-specific artifact + file/class/resource location; confirmed findings need a sink or second corroborating artifact.
+no-device handling: Without a device, do not mark confirmed; use supported_hypothesis unless code path is fully explicit.
+advisor-safe wording: Use as a manually checkable rule derived from full paper; do not claim the paper system was reproduced.
+
+========================================================================
+rule56
+
+source id
+B029
+
+category
+ble_connection
+
+where to check
+bond/connected-state checks
+
+summary
+static or code features: bonded/connected used as security principal
+app data / resource / policy features: Look for matching field names, resources, assets, DB schemas, JSON keys, policy text, or SDK config.
+dynamic validation signal: no-device runtime confirmation usually unavailable
+cloud / network signal: check whether BLE-derived data later enters upload/sync models
+minimum evidence: At minimum: rule-specific artifact + file/class/resource location; confirmed findings need a sink or second corroborating artifact.
+no-device handling: Without a device, do not mark confirmed; use supported_hypothesis unless code path is fully explicit.
+advisor-safe wording: Use as a manually checkable rule derived from full paper; do not claim the paper system was reproduced.
+
+========================================================================
+rule57
+
+source id
+B029
+
+category
+ble_connection
+
+where to check
+cached BLE trust state
+
+summary
+static or code features: deviceId/bonded/auth cached and reused without revalidation
+app data / resource / policy features: Look for matching field names, resources, assets, DB schemas, JSON keys, policy text, or SDK config.
+dynamic validation signal: no-device runtime confirmation usually unavailable
+cloud / network signal: check whether BLE-derived data later enters upload/sync models
+minimum evidence: At minimum: rule-specific artifact + file/class/resource location; confirmed findings need a sink or second corroborating artifact.
+no-device handling: Without a device, do not mark confirmed; use supported_hypothesis unless code path is fully explicit.
+advisor-safe wording: Use as a manually checkable rule derived from full paper; do not claim the paper system was reproduced.
+
+========================================================================
+rule58
+
+source id
+B029
+
+category
+ble_connection
+
+where to check
+BLE auth material storage
+
+summary
+static or code features: BLE key/token/session saved in DB/SharedPreferences
+app data / resource / policy features: Look for matching field names, resources, assets, DB schemas, JSON keys, policy text, or SDK config.
+dynamic validation signal: no-device runtime confirmation usually unavailable
+cloud / network signal: check whether BLE-derived data later enters upload/sync models
+minimum evidence: At minimum: rule-specific artifact + file/class/resource location; confirmed findings need a sink or second corroborating artifact.
+no-device handling: Without a device, do not mark confirmed; use supported_hypothesis unless code path is fully explicit.
+advisor-safe wording: Use as a manually checkable rule derived from full paper; do not claim the paper system was reproduced.
+
+========================================================================
+rule59
+
+source id
+B016
+
+category
+ble_connection
+
+where to check
+Manifest + policy
+
+summary
+static or code features: BLUETOOTH_SCAN/CONNECT/location not explained clearly
+app data / resource / policy features: Look for matching field names, resources, assets, DB schemas, JSON keys, policy text, or SDK config.
+dynamic validation signal: no-device runtime confirmation usually unavailable
+cloud / network signal: check whether BLE-derived data later enters upload/sync models
+minimum evidence: At minimum: rule-specific artifact + file/class/resource location; confirmed findings need a sink or second corroborating artifact.
+no-device handling: Without a device, do not mark confirmed; use supported_hypothesis unless code path is fully explicit.
+advisor-safe wording: Use as a manually checkable rule derived from full paper; do not claim the paper system was reproduced.
+
+========================================================================
+rule60
+
+source id
+B008
+
+category
+ble_connection
+
+where to check
+SDK scan callback path
+
+summary
+static or code features: BLE scan results handled in SDK namespace
+app data / resource / policy features: Look for matching field names, resources, assets, DB schemas, JSON keys, policy text, or SDK config.
+dynamic validation signal: no-device runtime confirmation usually unavailable
+cloud / network signal: check whether BLE-derived data later enters upload/sync models
+minimum evidence: At minimum: rule-specific artifact + file/class/resource location; confirmed findings need a sink or second corroborating artifact.
+no-device handling: Without a device, do not mark confirmed; use supported_hypothesis unless code path is fully explicit.
+advisor-safe wording: Use as a manually checkable rule derived from full paper; do not claim the paper system was reproduced.
+
+========================================================================
+rule61
+
+source id
+B028
+
+category
+ble_connection
+
+where to check
+parser functions
+
+summary
+static or code features: heart rate/SpO2/temperature parsed without sanity checks
+app data / resource / policy features: Look for matching field names, resources, assets, DB schemas, JSON keys, policy text, or SDK config.
+dynamic validation signal: no-device runtime confirmation usually unavailable
+cloud / network signal: check whether BLE-derived data later enters upload/sync models
+minimum evidence: At minimum: rule-specific artifact + file/class/resource location; confirmed findings need a sink or second corroborating artifact.
+no-device handling: Without a device, do not mark confirmed; use supported_hypothesis unless code path is fully explicit.
+advisor-safe wording: Use as a manually checkable rule derived from full paper; do not claim the paper system was reproduced.
+
+========================================================================
+rule62
+
+source id
+B028
+
+category
+ble_connection
+
+where to check
+UI-to-write path
+
+summary
+static or code features: control/reset/calibrate command writes without visible confirmation
+app data / resource / policy features: Look for matching field names, resources, assets, DB schemas, JSON keys, policy text, or SDK config.
+dynamic validation signal: no-device runtime confirmation usually unavailable
+cloud / network signal: check whether BLE-derived data later enters upload/sync models
+minimum evidence: At minimum: rule-specific artifact + file/class/resource location; confirmed findings need a sink or second corroborating artifact.
+no-device handling: Without a device, do not mark confirmed; use supported_hypothesis unless code path is fully explicit.
+advisor-safe wording: Use as a manually checkable rule derived from full paper; do not claim the paper system was reproduced.
+
+========================================================================
+rule63
+
+source id
+B029
+
+category
+ble_connection
+
+where to check
+BLE-to-cloud model
+
+summary
+static or code features: BLE measurement upload lacks source proof/signature/provenance field
+app data / resource / policy features: Look for matching field names, resources, assets, DB schemas, JSON keys, policy text, or SDK config.
+dynamic validation signal: no-device runtime confirmation usually unavailable
+cloud / network signal: check whether BLE-derived data later enters upload/sync models
+minimum evidence: At minimum: rule-specific artifact + file/class/resource location; confirmed findings need a sink or second corroborating artifact.
+no-device handling: Without a device, do not mark confirmed; use supported_hypothesis unless code path is fully explicit.
+advisor-safe wording: Use as a manually checkable rule derived from full paper; do not claim the paper system was reproduced.
+
+========================================================================
+rule64
+
+source id
+B005
+
+category
+app_dynamic
+
+where to check
+first launch traffic
+
+summary
+static or code features: third-party request before login or feature use
+app data / resource / policy features: Look for matching field names, resources, assets, DB schemas, JSON keys, policy text, or SDK config.
+dynamic validation signal: requires Android phone, ADB/logcat/proxy/Frida or local storage extraction
+cloud / network signal: capture endpoint/domain/payload only when visible
+minimum evidence: At minimum: rule-specific artifact + file/class/resource location; confirmed findings need a sink or second corroborating artifact.
+no-device handling: Does not require physical BLE device, but requires running the app on a phone where possible.
+advisor-safe wording: Use as a manually checkable rule derived from full paper; do not claim the paper system was reproduced.
+
+========================================================================
+rule65
+
+source id
+B007
+
+category
+app_dynamic
+
+where to check
+first launch consent test
+
+summary
+static or code features: SDK traffic before consent screen decision
+app data / resource / policy features: Look for matching field names, resources, assets, DB schemas, JSON keys, policy text, or SDK config.
+dynamic validation signal: requires Android phone, ADB/logcat/proxy/Frida or local storage extraction
+cloud / network signal: capture endpoint/domain/payload only when visible
+minimum evidence: At minimum: rule-specific artifact + file/class/resource location; confirmed findings need a sink or second corroborating artifact.
+no-device handling: Does not require physical BLE device, but requires running the app on a phone where possible.
+advisor-safe wording: Use as a manually checkable rule derived from full paper; do not claim the paper system was reproduced.
+
+========================================================================
+rule66
+
+source id
+B010
+
+category
+app_dynamic
+
+where to check
+proxy test
+
+summary
+static or code features: core requests accepted/rejected under user CA proxy
+app data / resource / policy features: Look for matching field names, resources, assets, DB schemas, JSON keys, policy text, or SDK config.
+dynamic validation signal: requires Android phone, ADB/logcat/proxy/Frida or local storage extraction
+cloud / network signal: capture endpoint/domain/payload only when visible
+minimum evidence: At minimum: rule-specific artifact + file/class/resource location; confirmed findings need a sink or second corroborating artifact.
+no-device handling: Does not require physical BLE device, but requires running the app on a phone where possible.
+advisor-safe wording: Use as a manually checkable rule derived from full paper; do not claim the paper system was reproduced.
+
+========================================================================
+rule67
+
+source id
+B030
+
+category
+app_dynamic
+
+where to check
+MITM test for custom TLS
+
+summary
+static or code features: weak TrustManager/HostnameVerifier path reachable at runtime
+app data / resource / policy features: Look for matching field names, resources, assets, DB schemas, JSON keys, policy text, or SDK config.
+dynamic validation signal: requires Android phone, ADB/logcat/proxy/Frida or local storage extraction
+cloud / network signal: capture endpoint/domain/payload only when visible
+minimum evidence: At minimum: rule-specific artifact + file/class/resource location; confirmed findings need a sink or second corroborating artifact.
+no-device handling: Does not require physical BLE device, but requires running the app on a phone where possible.
+advisor-safe wording: Use as a manually checkable rule derived from full paper; do not claim the paper system was reproduced.
+
+========================================================================
+rule68
+
+source id
+B001
+
+category
+app_dynamic
+
+where to check
+ADB logcat
+
+summary
+static or code features: token/measurement/profile appears during normal use
+app data / resource / policy features: Look for matching field names, resources, assets, DB schemas, JSON keys, policy text, or SDK config.
+dynamic validation signal: requires Android phone, ADB/logcat/proxy/Frida or local storage extraction
+cloud / network signal: capture endpoint/domain/payload only when visible
+minimum evidence: At minimum: rule-specific artifact + file/class/resource location; confirmed findings need a sink or second corroborating artifact.
+no-device handling: Does not require physical BLE device, but requires running the app on a phone where possible.
+advisor-safe wording: Use as a manually checkable rule derived from full paper; do not claim the paper system was reproduced.
+
+========================================================================
+rule69
+
+source id
+B005
+
+category
+app_dynamic
+
+where to check
+runtime filesystem extraction
+
+summary
+static or code features: sensitive values readable in DB/Prefs after use
+app data / resource / policy features: Look for matching field names, resources, assets, DB schemas, JSON keys, policy text, or SDK config.
+dynamic validation signal: requires Android phone, ADB/logcat/proxy/Frida or local storage extraction
+cloud / network signal: capture endpoint/domain/payload only when visible
+minimum evidence: At minimum: rule-specific artifact + file/class/resource location; confirmed findings need a sink or second corroborating artifact.
+no-device handling: Does not require physical BLE device, but requires running the app on a phone where possible.
+advisor-safe wording: Use as a manually checkable rule derived from full paper; do not claim the paper system was reproduced.
+
+========================================================================
+rule70
+
+source id
+B002
+
+category
+app_dynamic
+
+where to check
+pre/post logout storage comparison
+
+summary
+static or code features: sensitive local values remain after logout
+app data / resource / policy features: Look for matching field names, resources, assets, DB schemas, JSON keys, policy text, or SDK config.
+dynamic validation signal: requires Android phone, ADB/logcat/proxy/Frida or local storage extraction
+cloud / network signal: capture endpoint/domain/payload only when visible
+minimum evidence: At minimum: rule-specific artifact + file/class/resource location; confirmed findings need a sink or second corroborating artifact.
+no-device handling: Does not require physical BLE device, but requires running the app on a phone where possible.
+advisor-safe wording: Use as a manually checkable rule derived from full paper; do not claim the paper system was reproduced.
+
+========================================================================
+rule71
+
+source id
+B016
+
+category
+app_dynamic
+
+where to check
+adb am invocation
+
+summary
+static or code features: exported component can be invoked and changes app state
+app data / resource / policy features: Look for matching field names, resources, assets, DB schemas, JSON keys, policy text, or SDK config.
+dynamic validation signal: requires Android phone, ADB/logcat/proxy/Frida or local storage extraction
+cloud / network signal: capture endpoint/domain/payload only when visible
+minimum evidence: At minimum: rule-specific artifact + file/class/resource location; confirmed findings need a sink or second corroborating artifact.
+no-device handling: Does not require physical BLE device, but requires running the app on a phone where possible.
+advisor-safe wording: Use as a manually checkable rule derived from full paper; do not claim the paper system was reproduced.
+
+========================================================================
+rule72
+
+source id
+B026
+
+category
+app_dynamic
+
+where to check
+adb/browser deep-link test
+
+summary
+static or code features: crafted URI reaches sensitive page/action
+app data / resource / policy features: Look for matching field names, resources, assets, DB schemas, JSON keys, policy text, or SDK config.
+dynamic validation signal: requires Android phone, ADB/logcat/proxy/Frida or local storage extraction
+cloud / network signal: capture endpoint/domain/payload only when visible
+minimum evidence: At minimum: rule-specific artifact + file/class/resource location; confirmed findings need a sink or second corroborating artifact.
+no-device handling: Does not require physical BLE device, but requires running the app on a phone where possible.
+advisor-safe wording: Use as a manually checkable rule derived from full paper; do not claim the paper system was reproduced.
+
+========================================================================
+rule73
+
+source id
+B008
+
+category
+app_dynamic
+
+where to check
+Frida/log hook
+
+summary
+static or code features: startScan/getScanResults invoked without paired device
+app data / resource / policy features: Look for matching field names, resources, assets, DB schemas, JSON keys, policy text, or SDK config.
+dynamic validation signal: requires Android phone, ADB/logcat/proxy/Frida or local storage extraction
+cloud / network signal: capture endpoint/domain/payload only when visible
+minimum evidence: At minimum: rule-specific artifact + file/class/resource location; confirmed findings need a sink or second corroborating artifact.
+no-device handling: Does not require physical BLE device, but requires running the app on a phone where possible.
+advisor-safe wording: Use as a manually checkable rule derived from full paper; do not claim the paper system was reproduced.
+
+========================================================================
+rule74
+
+source id
+B004
+
+category
+app_dynamic
+
+where to check
+feature-timed capture
+
+summary
+static or code features: third-party request coincides with health/mental/medication flow
+app data / resource / policy features: Look for matching field names, resources, assets, DB schemas, JSON keys, policy text, or SDK config.
+dynamic validation signal: requires Android phone, ADB/logcat/proxy/Frida or local storage extraction
+cloud / network signal: capture endpoint/domain/payload only when visible
+minimum evidence: At minimum: rule-specific artifact + file/class/resource location; confirmed findings need a sink or second corroborating artifact.
+no-device handling: Does not require physical BLE device, but requires running the app on a phone where possible.
+advisor-safe wording: Use as a manually checkable rule derived from full paper; do not claim the paper system was reproduced.
+
+========================================================================
+rule75
+
+source id
+B014
+
+category
+app_dynamic
+
+where to check
+verification planning
+
+summary
+static or code features: top static findings selected for phone-based validation
+app data / resource / policy features: Look for matching field names, resources, assets, DB schemas, JSON keys, policy text, or SDK config.
+dynamic validation signal: requires Android phone, ADB/logcat/proxy/Frida or local storage extraction
+cloud / network signal: capture endpoint/domain/payload only when visible
+minimum evidence: At minimum: rule-specific artifact + file/class/resource location; confirmed findings need a sink or second corroborating artifact.
+no-device handling: Does not require physical BLE device, but requires running the app on a phone where possible.
+advisor-safe wording: Use as a manually checkable rule derived from full paper; do not claim the paper system was reproduced.
+
+========================================================================
+rule76
+
+source id
+B010
+
+category
+cloud_risk
+
+where to check
+API payload fields
+
+summary
+static or code features: health/measurement/symptom/medication fields reach endpoint
+app data / resource / policy features: Look for matching field names, resources, assets, DB schemas, JSON keys, policy text, or SDK config.
+dynamic validation signal: traffic capture strengthens confirmation
+cloud / network signal: primary evidence is endpoint, payload, recipient, TLS, or policy mismatch
+minimum evidence: At minimum: rule-specific artifact + file/class/resource location; confirmed findings need a sink or second corroborating artifact.
+no-device handling: Can often be inferred from code/models; confirmation requires traffic or endpoint call path.
+advisor-safe wording: Use as a manually checkable rule derived from full paper; do not claim the paper system was reproduced.
+
+========================================================================
+rule77
+
+source id
+B005
+
+category
+cloud_risk
+
+where to check
+third-party request payload
+
+summary
+static or code features: adid/deviceId/userId reaches third-party domain
+app data / resource / policy features: Look for matching field names, resources, assets, DB schemas, JSON keys, policy text, or SDK config.
+dynamic validation signal: traffic capture strengthens confirmation
+cloud / network signal: primary evidence is endpoint, payload, recipient, TLS, or policy mismatch
+minimum evidence: At minimum: rule-specific artifact + file/class/resource location; confirmed findings need a sink or second corroborating artifact.
+no-device handling: Can often be inferred from code/models; confirmation requires traffic or endpoint call path.
+advisor-safe wording: Use as a manually checkable rule derived from full paper; do not claim the paper system was reproduced.
+
+========================================================================
+rule78
+
+source id
+B004
+
+category
+cloud_risk
+
+where to check
+policy vs domain map
+
+summary
+static or code features: observed recipient not disclosed in policy
+app data / resource / policy features: Look for matching field names, resources, assets, DB schemas, JSON keys, policy text, or SDK config.
+dynamic validation signal: traffic capture strengthens confirmation
+cloud / network signal: primary evidence is endpoint, payload, recipient, TLS, or policy mismatch
+minimum evidence: At minimum: rule-specific artifact + file/class/resource location; confirmed findings need a sink or second corroborating artifact.
+no-device handling: Can often be inferred from code/models; confirmation requires traffic or endpoint call path.
+advisor-safe wording: Use as a manually checkable rule derived from full paper; do not claim the paper system was reproduced.
+
+========================================================================
+rule79
+
+source id
+B016
+
+category
+cloud_risk
+
+where to check
+request model
+
+summary
+static or code features: identity + device + location + health context in one API
+app data / resource / policy features: Look for matching field names, resources, assets, DB schemas, JSON keys, policy text, or SDK config.
+dynamic validation signal: traffic capture strengthens confirmation
+cloud / network signal: primary evidence is endpoint, payload, recipient, TLS, or policy mismatch
+minimum evidence: At minimum: rule-specific artifact + file/class/resource location; confirmed findings need a sink or second corroborating artifact.
+no-device handling: Can often be inferred from code/models; confirmation requires traffic or endpoint call path.
+advisor-safe wording: Use as a manually checkable rule derived from full paper; do not claim the paper system was reproduced.
+
+========================================================================
+rule80
+
+source id
+B025
+
+category
+cloud_risk
+
+where to check
+client-to-endpoint mapping
+
+summary
+static or code features: sensitive endpoint uses weak TLS client/config
+app data / resource / policy features: Look for matching field names, resources, assets, DB schemas, JSON keys, policy text, or SDK config.
+dynamic validation signal: traffic capture strengthens confirmation
+cloud / network signal: primary evidence is endpoint, payload, recipient, TLS, or policy mismatch
+minimum evidence: At minimum: rule-specific artifact + file/class/resource location; confirmed findings need a sink or second corroborating artifact.
+no-device handling: Can often be inferred from code/models; confirmation requires traffic or endpoint call path.
+advisor-safe wording: Use as a manually checkable rule derived from full paper; do not claim the paper system was reproduced.
+
+========================================================================
+rule81
+
+source id
+B011
+
+category
+cloud_risk
+
+where to check
+sync serializer
+
+summary
+static or code features: medication/dose/reminder fields uploaded
+app data / resource / policy features: Look for matching field names, resources, assets, DB schemas, JSON keys, policy text, or SDK config.
+dynamic validation signal: traffic capture strengthens confirmation
+cloud / network signal: primary evidence is endpoint, payload, recipient, TLS, or policy mismatch
+minimum evidence: At minimum: rule-specific artifact + file/class/resource location; confirmed findings need a sink or second corroborating artifact.
+no-device handling: Can often be inferred from code/models; confirmation requires traffic or endpoint call path.
+advisor-safe wording: Use as a manually checkable rule derived from full paper; do not claim the paper system was reproduced.
+
+========================================================================
+rule82
+
+source id
+B019
+
+category
+cloud_risk
+
+where to check
+measurement upload model
+
+summary
+static or code features: SpO2/heart-rate/device measurement linked to account
+app data / resource / policy features: Look for matching field names, resources, assets, DB schemas, JSON keys, policy text, or SDK config.
+dynamic validation signal: traffic capture strengthens confirmation
+cloud / network signal: primary evidence is endpoint, payload, recipient, TLS, or policy mismatch
+minimum evidence: At minimum: rule-specific artifact + file/class/resource location; confirmed findings need a sink or second corroborating artifact.
+no-device handling: Can often be inferred from code/models; confirmation requires traffic or endpoint call path.
+advisor-safe wording: Use as a manually checkable rule derived from full paper; do not claim the paper system was reproduced.
+
+========================================================================
+rule83
+
+source id
+B008
+
+category
+cloud_risk
+
+where to check
+scan upload serializer
+
+summary
+static or code features: BLE/Wi-Fi scan fields sent to remote service
+app data / resource / policy features: Look for matching field names, resources, assets, DB schemas, JSON keys, policy text, or SDK config.
+dynamic validation signal: traffic capture strengthens confirmation
+cloud / network signal: primary evidence is endpoint, payload, recipient, TLS, or policy mismatch
+minimum evidence: At minimum: rule-specific artifact + file/class/resource location; confirmed findings need a sink or second corroborating artifact.
+no-device handling: Can often be inferred from code/models; confirmation requires traffic or endpoint call path.
+advisor-safe wording: Use as a manually checkable rule derived from full paper; do not claim the paper system was reproduced.

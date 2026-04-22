@@ -1,0 +1,222 @@
+1. The cleartext WebSocket account chain.
+Related rules: BR006 and BR013 confirmed. BR095 highly suspected only.
+Files:
+`app\fitpro\resources\AndroidManifest.xml:154`
+`app\fitpro\resources\res\xml\network_security_config.xml:3`
+`app\fitpro\resources\res\xml\network_security_config.xml:13`
+`app\fitpro\sources\xfkj\fitpro\websocket\JWebSocketClientService.java:42`
+`app\fitpro\sources\xfkj\fitpro\websocket\JWebSocketClientService.java:45`
+`app\fitpro\sources\xfkj\fitpro\websocket\JWebSocketClientService.java:69-75`
+Package:
+The application globally allows cleartext. The network config also allows cleartext at both the domain and base levels. The first-party WebSocket service does not use `wss://`.
+Code:
+It builds a URI with `ws://hiapi.jusonsmart.com:7780/websocket/%1$s/%2$s`. The first value is `DBHelper.getUserId()`. The second value is `DBHelper.getUserToken().replaceAll(...)`. So the path itself carries account-linked material. `onMessage(String str)` logs the server message. The service later decodes audio content and writes an `.amr` file.
+Basis:
+This is not just a policy weakness. It is an actual first-party plaintext design. The token-derived value is in the URI path, not just buried inside encrypted payload later.
+Limit:
+I still do not have runtime packet capture. I still do not claim every health API is plaintext. I still do not claim HTTPS validation is broken everywhere.
+
+2. The same WebSocket path reaches local voice storage and chat state.
+Related rules: BR013 and BR047.
+Status: confirmed for the cleartext design and log path.
+Files:
+`app\fitpro\sources\xfkj\fitpro\websocket\JWebSocketClientService.java:45`
+`app\fitpro\sources\xfkj\fitpro\websocket\JWebSocketClientService.java:69-75`
+`app\fitpro\sources\xfkj\fitpro\utils\PathUtils.java`
+Chain:
+The service receives a server message. It logs `message:` plus the raw string. It parses the message into chat content. When the content is voice, it decodes base64 audio. It builds a filename under the external app music path. It saves the audio file as `.amr`. It constructs a `ChatModel`. It saves that chat model and syncs history state.
+Impact:
+The issue is not only network plaintext. It also reaches local message handling, local file storage, and chat database state.
+Limit:
+I am not claiming every saved audio file contains health data. I am not claiming the app silently uploads those files elsewhere.
+
+3. Exported service and activity entry points.
+Related rules: BR029, BR030, and BR059.
+Status: confirmed.
+Manifest:
+`app\fitpro\resources\AndroidManifest.xml:219-221` for `JWebSocketClientService`
+`app\fitpro\resources\AndroidManifest.xml:235-236` for `BluetoothCommandActivity`
+`app\fitpro\resources\AndroidManifest.xml:244-245` for `DebugFunctionActivity`
+`app\fitpro\resources\AndroidManifest.xml:259-260` for `ECGHistoryActivity`
+`app\fitpro\resources\AndroidManifest.xml:292-293` for `PayQrcodeActivity`
+`app\fitpro\resources\AndroidManifest.xml:353-354` for `HealthReportActivity`
+`app\fitpro\resources\AndroidManifest.xml:396-397` for `ApiDebugActivity`
+`app\fitpro\resources\AndroidManifest.xml:607-609` for `UploadDataService`
+Basis:
+The manifest exposure is broad. The code behind those components is also meaningful. This is not only "exported=true and maybe harmless".
+
+4. Debug function entry to device command paths.
+Related rules: BR029 and BR059 confirmed. BR074 highly suspected.
+Files:
+`app\fitpro\sources\xfkj\fitpro\activity\debug\DebugFunctionActivity.java:73-75`
+`app\fitpro\sources\xfkj\fitpro\activity\debug\DebugFunctionActivity.java:224`
+`app\fitpro\sources\xfkj\fitpro\activity\debug\DebugFunctionActivity.java:228`
+`app\fitpro\sources\xfkj\fitpro\activity\debug\BluetoothCommandActivity.java:33`
+`app\fitpro\sources\xfkj\fitpro\activity\debug\BluetoothCommandActivity.java:38`
+`app\fitpro\sources\xfkj\fitpro\activity\debug\BluetoothCommandActivity.java:77`
+`app\fitpro\sources\xfkj\fitpro\activity\debug\BluetoothCommandActivity.java:83-99`
+`app\fitpro\sources\xfkj\fitpro\bluetooth\SendData.java:242-243`
+Chain:
+Opening `DebugFunctionActivity` sets `Constant.isDeubg = true`. That page can jump into API debug and Bluetooth command pages. `BluetoothCommandActivity` loads `weather.json`. It can build random or chosen weather values. It passes those bytes into `commandPoolWrite(SendData.getWeatherInfoValue(...))`.
+Boundary:
+The exported debug path and the local BLE command path are real. That is enough for the component-exposure finding.
+Limit:
+I still need runtime proof that an outside trigger can drive the full BLE effect on a live device. The app still checks connection state. The real downstream effect depends on the watch side too.
+
+5. Exported payment QR path into BLE write.
+Related rules: BR029 confirmed. BR074 highly suspected.
+Files:
+`app\fitpro\sources\xfkj\fitpro\activity\pay\PayQrcodeActivity.java:33`
+`app\fitpro\sources\xfkj\fitpro\activity\pay\PayQrcodeActivity.java:40`
+`app\fitpro\sources\xfkj\fitpro\activity\pay\PayQrcodeActivity.java:85`
+`app\fitpro\sources\xfkj\fitpro\activity\pay\PayQrcodeActivity.java:142-144`
+`app\fitpro\sources\xfkj\fitpro\activity\pay\PayQrcodeActivity.java:173`
+`app\fitpro\sources\xfkj\fitpro\bluetooth\SendData.java:405-406`
+Chain:
+The activity reads `PAY_EXTRA` from the intent. It keeps the QR string in `mQrcodeUrl`. When the URL is present and BLE is connected, it sends `SendData.getPayValue((byte) type, mQrcodeUrl)`. The payload is the type byte plus the QR string bytes.
+Boundary:
+The app definitely has a path from exported UI to BLE payment payload writing. But I still do not have runtime proof that an outside app can reach the full path without user interaction or other checks.
+
+6. Exported ECG history path.
+Related rules: BR029 and BR059.
+Status: confirmed.
+Files:
+`app\fitpro\sources\xfkj\fitpro\activity\ecg\ECGHistoryActivity.java:31-35`
+`app\fitpro\sources\xfkj\fitpro\db\DBHelper.java:744`
+Code:
+The activity opens and immediately queries ECG data from the local DB. If the list is null, it replaces it with an empty list. Otherwise it binds the data into the ECG history adapter.
+Impact:
+This is a concrete local health-history reader behind an exported component. That is enough to keep the component exposure finding strong.
+
+7. Exported upload service to sequential history upload.
+Related rules: BR030 and BR059 confirmed. BR091 highly suspected.
+Files:
+`app\fitpro\sources\xfkj\fitpro\service\UploadDataService.java:35-42`
+`app\fitpro\sources\xfkj\fitpro\service\UploadDataService.java:58-71`
+`app\fitpro\sources\xfkj\fitpro\service\UploadDataService.java:106-117`
+`app\fitpro\sources\xfkj\fitpro\service\UploadDataService.java:151-164`
+`app\fitpro\sources\xfkj\fitpro\db\DBHelper.java:132-136`
+`app\fitpro\sources\xfkj\fitpro\db\DBHelper.java:212-216`
+`app\fitpro\sources\xfkj\fitpro\db\DBHelper.java:266-270`
+`app\fitpro\sources\xfkj\fitpro\api\HttpHelper.java:452-462`
+`app\fitpro\sources\xfkj\fitpro\api\HttpHelper.java:489-498`
+`app\fitpro\sources\xfkj\fitpro\api\CommonService.java:357`
+`app\fitpro\sources\xfkj\fitpro\api\CommonService.java:365`
+`app\fitpro\sources\xfkj\fitpro\api\CommonService.java:369`
+Step by step:
+`onCreate()` logs upload start. It logs `deviceId1` and `deviceId2`. If user info exists, it starts with historical steps. `uploadHisSteps()` reads unsent step records from DB. After that it moves to `uploadHisSleep()`. Then it moves to `uploadHeartBlood()`. The final upload call sends JSON through the common service APIs.
+Boundary:
+The exported service and local upload-trigger chain are confirmed. Actual observed network receipt is still below confirmed because I did not capture traffic.
+
+8. Unencrypted DB and external app-specific path.
+Related rules: BR025 and BR027.
+Status: confirmed.
+Files:
+`app\fitpro\sources\xfkj\fitpro\db\DBModule.java:32`
+`app\fitpro\sources\xfkj\fitpro\utils\PathUtils.java:30`
+`app\fitpro\sources\xfkj\fitpro\utils\PathUtils.java:57`
+`app\fitpro\sources\xfkj\fitpro\utils\PathUtils.java:101-102`
+Chain:
+The DB encryption switch is off. The DB directory is constructed under `Environment.getExternalStorageDirectory()/Android/data/<package>/db`. This is not the strongest storage posture.
+Boundary:
+I am not rewriting this as public root storage. The original review was right to keep the wording narrower. It is external app-specific storage, not the same thing as dumping files into a globally shared folder.
+
+9. Preference layer and backup layer.
+Related rules: BR026 and BR028.
+Status: confirmed.
+Files:
+`app\fitpro\resources\res\xml\backup_rules.xml:2`
+`app\fitpro\resources\res\xml\data_extraction_rules.xml:3`
+`app\fitpro\sources\xfkj\fitpro\fragment\MineFragment.java:281-282`
+`app\fitpro\sources\xfkj\fitpro\service\BaseLeService.java:132`
+`app\fitpro\sources\xfkj\fitpro\service\BaseLeService.java:737`
+Basis:
+The original audit already mapped ordinary preference storage for Bluetooth address, body values, goals, and related state. The live code also shows repeated use of stored Bluetooth address. The backup rules are broad and do not exclude sensitive content.
+Basis:
+The storage design is plainly weak. The backup design does not narrow the exposure.
+
+10. Hardcoded token and extractable key material.
+Related rule: BR016.
+Status: confirmed.
+Files:
+`app\fitpro\sources\xfkj\fitpro\utils\Constant.java:70`
+`app\fitpro\sources\xfkj\fitpro\db\DBHelper.java:304-323`
+`app\fitpro\sources\xfkj\fitpro\api\HttpHelper.java:683-692`
+`app\fitpro\resources\res\values\strings.xml:1612-1613`
+`app\fitpro\resources\res\values\strings.xml:2295-2296`
+`app\fitpro\resources\res\values\strings.xml:2391`
+`app\fitpro\resources\res\values\strings.xml:2659`
+`app\fitpro\resources\res\values\strings.xml:2768`
+`app\fitpro\resources\res\values\strings.xml:2783`
+Step by step:
+The package ships with a hardcoded bearer token constant. Token lookup falls back to that constant path according to the original audit and DB helper logic. `updateDeviceInfo()` uses the constant directly. The resources also expose social and analytics key material.
+Boundary:
+The confirmed point is extractability and actual first-party use of the bearer token. I am not claiming every embedded string is equally sensitive.
+
+11. Sensitive log chain.
+Related rule: BR047 confirmed. BR080 not proven.
+Files:
+`app\fitpro\sources\xfkj\fitpro\fragment\MineFragment.java:281-282`
+`app\fitpro\sources\xfkj\fitpro\websocket\JWebSocketClientService.java:45`
+`app\fitpro\sources\xfkj\fitpro\service\UploadDataService.java:37-41`
+`app\fitpro\sources\xfkj\fitpro\service\BaseLeService.java:498`
+`app\fitpro\sources\xfkj\fitpro\bluetooth\revData\BaseReceiveData.java:876-879`
+`app\fitpro\sources\xfkj\fitpro\bluetooth\revData\BaseReceiveData.java:1436`
+`app\fitpro\sources\xfkj\fitpro\bluetooth\revData\BaseReceiveData.java:1466`
+`app\fitpro\sources\xfkj\fitpro\bluetooth\revData\BaseReceiveData.java:1648-1689`
+Logs:
+Token. Bluetooth address. BLE state. Raw WebSocket message text. Device identifiers during upload. Raw BLE source hex. Parsed sleep and movement values. Step-related parsed values.
+Basis:
+These are first-party log sites with sensitive variables wired into them. This is not a vague "maybe debug logging exists" claim.
+Limit:
+I still do not have actual logcat output from a device session.
+
+12. Device-info upload path.
+Related rule: BR015.
+Status: confirmed.
+Files:
+`app\fitpro\sources\xfkj\fitpro\api\CommonService.java:322`
+`app\fitpro\sources\xfkj\fitpro\api\HttpHelper.java:683-692`
+Upload:
+MAC address. Device model. Device version. App version. OS version. OS type. OS language. Phone model. User ID.
+Basis:
+It is a direct first-party API definition and call path. No speculation is needed.
+
+13. BLE measurement to DB to upload.
+Related rules: BR091, BR094, and BR097 highly suspected.
+Files:
+`app\fitpro\sources\xfkj\fitpro\bluetooth\revData\BaseReceiveData.java:1497-1501`
+`app\fitpro\sources\xfkj\fitpro\bluetooth\revData\BaseReceiveData.java:1798-1799`
+`app\fitpro\sources\xfkj\fitpro\api\HttpHelper.java:456-462`
+`app\fitpro\sources\xfkj\fitpro\api\CommonService.java:357`
+Step by step:
+BLE data is parsed into model objects. Sleep data is stored with date, type, and device id. Measurement data is saved through `DBHelper.saveMeasureValue(measureDetailsModel)`. That same object is then pushed into `uploadHeartBlood(measureDetailsModel)`. The helper serializes the object and calls the common service upload endpoint.
+Limit:
+The static chain is real. But I still do not have captured packets showing the exact runtime fields and server receipt.
+
+14. BLE application-layer protection gap.
+Related rules: BR061, BR062, BR063, BR065, BR067, BR068, BR073, and BR075.
+Status: highly suspected.
+Files:
+`app\fitpro\sources\xfkj\fitpro\service\BaseLeService.java:162`
+`app\fitpro\sources\xfkj\fitpro\service\BaseLeService.java:726-744`
+`app\fitpro\sources\xfkj\fitpro\bluetooth\SendData.java:44`
+`app\fitpro\sources\xfkj\fitpro\bluetooth\SendData.java:83-84`
+`app\fitpro\sources\xfkj\fitpro\bluetooth\SendData.java:111-125`
+`app\fitpro\sources\xfkj\fitpro\bluetooth\SendData.java:242-243`
+`app\fitpro\sources\xfkj\fitpro\bluetooth\SendData.java:294`
+`app\fitpro\sources\xfkj\fitpro\bluetooth\SendData.java:314`
+`app\fitpro\sources\xfkj\fitpro\bluetooth\SendData.java:405-406`
+Code:
+The app remembers the Bluetooth address and reconnects with it. Service discovery leads into setup actions. Command building is an opcode plus payload style builder. I do not see visible HMAC. I do not see visible signature verification. I do not see visible provenance checks for incoming measurement data in first-party code. The app can build pair, reset, user-info, step, heart-rate, weather, and payment messages.
+Limit:
+The actual protocol guarantees may still exist in the device or in layers I cannot see from this sample alone. I do not have a real device session or BLE captures.
+
+15. Items I am still not upgrading.
+Related rules:
+BR007 BR009 BR010 BR011 BR021 to BR024 BR032 to BR035
+Limit:
+I did not see trust-all certificate code. I did not see an always-true hostname verifier. I did not see a first-party sensitive provider exposure chain. I did not see a first-party deep link chain into sensitive logic. These are exactly the kinds of points that get overstated if the report is too compressed. So I am leaving them out of the positive side here too.
+
+
+

@@ -1,0 +1,46 @@
+Yuwell.
+
+1. Transport.
+Rules: BR006 and BR008 confirmed. BR095 supported_hypothesis.
+Status: mixed.
+The transport policy issue is real and should stay confirmed. The Manifest points to a network security config. `app\yuwell\resources\res\xml\network_security_config.xml:3` sets `cleartextTrafficPermitted="true"` in the base config. That means the package level policy allows cleartext traffic. This is exactly the kind of static configuration fact that the original review kept as confirmed. At the same time, the same review also kept an important boundary. `BuildConfig.java:12-13` shows the main business host as HTTPS. So the report should not say health data was already observed moving over HTTP. The supported part is narrower. If some SDK path, H5 path, redirect, or alternate endpoint uses HTTP, the package policy will not block it. That is why BR095 stays supported_hypothesis. The confirmed part remains only the weak global policy itself.
+
+2. Entry.
+Rules: BR029 and BR059 confirmed. BR035 supported_hypothesis.
+Status: mixed.
+The exported entry chain here is strong. `app\yuwell\resources\AndroidManifest.xml:275-284` exposes `UHealthWebViewActivity`. The action is `com.yuwell.uhealth.action.START_ACTIVITY`. `app\yuwell\sources\com\yuwell\uhealth\view\base\web\UHealthWebViewActivity.java:47` reads the title extra. The same file at `:63` reads the URL extra and loads it. The report also notes `WebViewClient` line 29 keeps loading redirected URLs. That is enough to confirm the outside controllable WebView entry. The report also kept `SNInputActivity` as another exported first party surface. That is why BR059 stays confirmed too. The limit is still important. This is an exposed entry and controllable URL finding. It is not yet a confirmed token leak, JavaScript bridge issue, or deep link takeover. So BR035 remains supported_hypothesis rather than confirmed.
+
+3. Prefs.
+Rules: BR026 confirmed. BR082 not_testable.
+Status: mixed.
+The preference storage chain is very concrete. `app\yuwell\sources\PreferenceSource.java:59-64` reads and caches `access_token`. The same file at `:315-317` saves it. `PreferenceSource.java:209-214` reads `refress_token`. The same file at `:476-478` saves it. `PreferenceSource.java:123` reads `current_familymember`. The same file at `:377-380` serializes and saves the family member object. Other lines store device names and last object cursors for different device flows. That is enough for BR026. The logout side is where I still need to be careful. `clearLoginInfo()` removes some login fields. But the original detailed notes were explicit that dynamic residual verification was not done. So BR082 remains not_testable. I should not turn partial clear logic into a confirmed residual leak claim without a real device check.
+
+4. DB.
+Rules: BR025 and BR018 confirmed. BR091, BR094, and BR097 supported_hypothesis.
+Status: mixed.
+The local database side is strong. `app\yuwell\sources\DatabaseServiceImpl.java:703-704` shows database name `uhealth.db`. `DatabaseManager.java:32-36` creates it through ordinary xUtils `DbUtils`. `BPMeasurement.java` contains blood pressure, pulse, device, and member fields. `BGMeasurement.java` contains glucose and medicine related fields. `OxyData.java` contains SpO2, heart rate, device, and member fields. `FamilyMember.java` contains birthday, phone, height, waistline, weight, and related profile fields. That is enough to keep BR025 and BR018 confirmed. The sync side is also visible. `DatabaseServiceImpl.getUploadDataArray()` extracts rows into JSON. `SyncService` encrypts and sends that JSON. That is enough for a strong supported cloud path. It is still not enough to say I saw a live upload. That is why BR091, BR094, and BR097 stay supported_hypothesis. The static chain is closed. The runtime observation is not.
+
+5. Logs.
+Rules: BR047 and BR027 confirmed. BR080 not_testable.
+Status: mixed.
+The logging issue here is not a single debug line. It is a full chain from sensitive sources to local files and upload. `SyncService.java:69-70` decrypts sync data and logs it. The same file at `:114-125` logs upload JSON and a map that includes `UID`, `entityKey`, `uploadData`, `accessToken`, and `deviceId`. `UHBleCallbacksHandler.java:197` logs BLE address. The same file at `:274` logs glucose JSON. `MoxManager.java:44,56,232` logs received bytes, sent bytes, and parsed data. `Logger.java:55` uses AndroidPrinter and FilePrinter under external cache `LOG`. `LogUploadUtil.java:28-49` compresses and uploads logs. That is enough to keep BR047 and BR027 confirmed together. The dynamic line still stays separate. I did not inspect a real log file from a running device. So BR080 remains not_testable.
+
+6. Crypto.
+Rules: BR017.
+Status: confirmed.
+The DES path is explicit and should stay confirmed. `app\yuwell\sources\EncryptUtil.java:22` hardcodes `8yu&well`. The same file at `:56` uses `DES/ECB/NoPadding` for decrypt. The same file at `:85` uses `DES/ECB/PKCS7Padding` for encrypt. `SyncService.java:120,131` wraps upload JSON with that encrypt call. `DatabaseServiceImpl.java:1498,1508` decrypts incoming server data with the same utility. So this is not dead code. It is part of the live sync path. The careful limit is the same as the original final review. This does not prove outer HTTPS is missing. It does not prove the server has no other verification. It confirms a fixed key DES or ECB design inside the client sync chain.
+
+7. SDKs.
+Rules: BR040 and BR016 confirmed. BR041 supported_hypothesis. BR077 and BR092 not_testable.
+Status: mixed.
+The static SDK picture is strong. `GlobalContext.java` initializes JPush, Udesk, UMeng, and Youzan related code. `Startup.java:157-158` initializes and preloads Youzan. The Manifest also exposes JPUSH, OPPO, and mPaaS configuration values. That is enough to keep BR040 and BR016 confirmed. The same material also shows why BR041 stays lower. There is some gating logic, and there is no packet capture proving what each SDK sends before consent. So I should not say third party leakage is confirmed just because the SDKs are present and initialized. The right split is the same as the original review. Static init and key exposure are confirmed. Pre consent or undisclosed traffic still needs runtime proof.
+
+8. BLE.
+Rules: BR066 confirmed. BR061-BR065, BR067-BR069, BR073-BR075 supported_hypothesis. BR091, BR094, and BR097 also stay supported_hypothesis through the same broader chain.
+Status: mixed.
+This is the richest part of the app, but it still needs discipline. The confirmed part is the exposed protocol surface. The APK contains custom BLE service and characteristic logic in `MoxManager` and related characteristic handling. The app also processes blood pressure, glucose, and oxygen measurements from BLE callbacks. The static measurement to DB to sync chain is real. At the same time, the attack style part still needs a real device. The source does not show app specific HMAC, signature, or token checks before commands and measurements move inward. That is meaningful. But it is still not the same as a confirmed spoofing or replay exploit. So the attack rules remain supported_hypothesis. The data to cloud rules also remain supported_hypothesis because no live payload was captured.
+
+9. Paths.
+Rules: BR023 supported_hypothesis. BR021, BR022, BR024, BR013, BR020, and BR096 not_supported. BR019 supported_hypothesis only.
+Status: mixed.
+I want this boundary section because the app has enough real findings already. The FileProvider path setup is broad. `file_paths.xml:30-32` includes `root-path name="root" path=""`. But the provider itself is not exported in the way needed for a confirmed direct provider leak. So BR023 stays a supported_hypothesis config issue, while BR021, BR022, and BR024 stay out. The HTTP business endpoint claim also stays out. The original review said the SOAPAction namespace should not be mistaken for a transport URL. That is why BR013 remains not_supported. The health field boundaries matter too. `BGMeasurement` has a `medicine` field, but the original review only kept BR019 as a weak medication related hypothesis. It did not support a real prescription privacy claim. And there was no mental health or medication upload chain strong enough for BR020 or BR096. Those should stay out exactly as they were.

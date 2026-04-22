@@ -1,0 +1,138 @@
+1. BLE measurement records to logs, UI, and upload object creation.
+Related rules: R006, R007, and R050 confirmed. BLE app-layer rules highly suspected.
+Files:
+`app\myvitale\sources\com\myvitale\bleconnection\AndroidApp.java:47-57`
+`app\myvitale\sources\com\myvitale\bleconnection\core\AppLog.java:7-8`
+`app\myvitale\sources\com\myvitale\bleconnection\features\measures\presentation\MeasuresViewerPresenter.java:101`
+`app\myvitale\sources\com\myvitale\bleconnection\features\measures\presentation\MeasuresViewerPresenter.java:106`
+`app\myvitale\sources\com\myvitale\bleconnection\features\users\domain\model\CurrentUser.java:32`
+`app\myvitale\sources\com\myvitale\bleconnection\features\users\domain\model\CurrentUser.java:37`
+`app\myvitale\sources\com\myvitale\bleconnection\features\users\domain\model\CurrentUser.java:40-45`
+`app\myvitale\sources\com\myvitale\bleconnection\core\OmronSessionManager.java:130-141`
+`app\myvitale\sources\com\myvitale\bleconnection\core\SessionController.java:192-199`
+`app\myvitale\sources\com\myvitale\bleconnection\core\SessionController.java:307-324`
+`app\myvitale\sources\com\myvitale\bleconnection\core\OmronSessionManager.java:179`
+`app\myvitale\sources\com\myvitale\bleconnection\features\measures\presentation\MeasuresViewerPresenter.java:225-253`
+Step by step:
+The application initializes the Omron device manager. The presenter starts the get-data flow. The current user profile is converted into an Omron user-data map. That map includes date of birth. It includes gender. It includes height. The session manager enables reading measurement records and extended records. The session controller logs the device address and the whole session option map. The session controller starts the Omron session with the device. When data comes back, the controller logs `UserData`. It also logs `MeasurementRecords`. The session manager prints the latest record set again. The presenter reads the returned values and prints weight. It prints BMI. It prints basal metabolism. It prints body fat. It prints body water mass. It prints fat free mass. It prints muscle mass. It prints visceral fat. It prints skeletal muscle.
+Basis:
+The health-data path is not hypothetical. The app really requests it, receives it, logs it, and shows it.
+
+2. Upload object creation and remote sink.
+Related rules: R006 and R007.
+Status: confirmed.
+Files:
+`app\myvitale\sources\com\myvitale\bleconnection\features\measures\presentation\MeasuresViewerPresenter.java:209`
+`app\myvitale\sources\com\myvitale\bleconnection\features\measures\domain\UploadMeasures.java:31`
+`app\myvitale\sources\com\myvitale\bleconnection\features\measures\data\remote\RemoteMeasuresDataSource.java:26`
+`app\myvitale\sources\com\myvitale\bleconnection\features\measures\data\remote\MeasuresApi.java:37`
+`app\myvitale\sources\com\myvitale\bleconnection\features\measures\data\remote\MeasuresApi.java:40`
+Step by step:
+The presenter takes `userId`, `weight`, `fatPercent`, `restMetabolism`, `bmi`, `skeletalMuscle`, `visceralFat`, and `comment`. `UploadMeasures` converts those values into a `Measures` object. The remote data source calls `postMeasures(...)`. The API class defines the default HTTPS base URL. The API class also defines the trainer-api measures path.
+Basis:
+The sink is explicit. The payload object is explicit. The target is first-party HTTPS infrastructure, not a guess.
+
+3. Log boundary.
+Related rule: R050 but with weaker certainty here.
+Status: highly suspected.
+Files:
+`app\myvitale\sources\com\myvitale\bleconnection\features\authentication\service\VitaleAuthService.java:121`
+`app\myvitale\sources\com\myvitale\bleconnection\features\measures\data\remote\MeasuresApi.java:119`
+`app\myvitale\sources\com\myvitale\bleconnection\features\profile\data\remote\ProfilesApi.java:119`
+`app\myvitale\sources\com\myvitale\bleconnection\features\users\data\remote\UsersApi.java:143`
+Visible:
+Each of these Ktor clients sets `LogLevel.ALL`. That means request and response logging can be extensive.
+Limit:
+I do not have runtime logs from a session. I do not have a confirmed request body dump from those clients. So I am not folding them into the confirmed logging chain.
+
+4. Token storage chain.
+Related rule: R054.
+Status: highly suspected.
+Files:
+`app\myvitale\resources\AndroidManifest.xml:30`
+`app\myvitale\sources\com\myvitale\bleconnection\features\authentication\presentation\AuthPresenter.java:164`
+`app\myvitale\sources\com\myvitale\bleconnection\core\SessionManagerSP.java:12`
+`app\myvitale\sources\com\myvitale\bleconnection\core\SessionManagerSP.java:21`
+`app\myvitale\sources\com\myvitale\bleconnection\core\SessionManagerSP.java:32`
+`app\myvitale\sources\com\myvitale\bleconnection\features\users\presentation\presenter\UsersListPresenter.java:377-379`
+Step by step:
+The manifest allows backup. After successful authentication, the presenter saves the token. The token lives in `session_local_store`. The store is ordinary shared preferences. The token is written with the preference editor. Logout clears that store.
+Boundary:
+I can confirm the write design. I cannot confirm the real post-use device contents without extracting them.
+
+5. Preference storage for partner key and server URL.
+Related rule: R054 and the cross-layer base-URL issue.
+Status: highly suspected.
+Files:
+`app\myvitale\sources\com\myvitale\bleconnection\PreferenceManager.java:12-13`
+`app\myvitale\sources\com\myvitale\bleconnection\PreferenceManager.java:27-41`
+`app\myvitale\sources\com\myvitale\bleconnection\features\authentication\presentation\AuthPresenter.java:202-203`
+`app\myvitale\sources\com\myvitale\bleconnection\features\users\presentation\presenter\UsersListPresenter.java:397-398`
+`app\myvitale\sources\com\myvitale\bleconnection\features\prefs\PreferencesActivity.java:125-132`
+Chain:
+The app stores `partnerKey`. The app stores `measuresServerUrl`. The auth screen can save the server URL. The users screen can save it too. The preferences page can save it too.
+Impact:
+Those are sensitive trust-boundary settings. They are not stored behind a visible encrypted wrapper.
+
+6. Configurable base URL affecting four API families.
+Status: highly suspected as an engineering boundary issue.
+Files:
+`app\myvitale\sources\com\myvitale\bleconnection\features\authentication\service\VitaleAuthService.java:259-261`
+`app\myvitale\sources\com\myvitale\bleconnection\features\measures\data\remote\MeasuresApi.java:174-176`
+`app\myvitale\sources\com\myvitale\bleconnection\features\profile\data\remote\ProfilesApi.java:174-176`
+`app\myvitale\sources\com\myvitale\bleconnection\features\users\data\remote\UsersApi.java:218-220`
+Step by step:
+The auth client rebuilds its URL from the configured server string. The measures client does the same. The profile client does the same. The users client does the same.
+Boundary:
+The base URL issue is real. But I still do not see an HTTP downgrade or a trust-all TLS override in first-party code.
+
+7. BLE app-layer trust boundary.
+Related rules: R073 to R084.
+Status: highly suspected.
+Files:
+`app\myvitale\sources\com\myvitale\bleconnection\core\OmronSessionManager.java:104-108`
+`app\myvitale\sources\com\myvitale\bleconnection\core\OmronSessionManager.java:136-141`
+`app\myvitale\sources\com\myvitale\bleconnection\core\SessionController.java:199`
+`app\myvitale\sources\jp\co\ohq\ble\OHQDeviceManager.java:201-216`
+`app\myvitale\sources\jp\co\ohq\ble\OHQDevice.java:524-567`
+`app\myvitale\sources\jp\co\ohq\ble\OHQDevice.java:996`
+`app\myvitale\sources\jp\co\ohq\ble\OHQDevice.java:1326-1360`
+Chain:
+The first-party code explicitly enables reading measurement records and extended records. It hands control to the Omron SDK device manager. The deeper record-access logic is inside the SDK. The first-party layer does not add an obvious provenance or signature check on top of what it gets back.
+Limit:
+I do not have BLE captures. I do not have a real device session. I do not know whether the SDK or device adds protections that are not obvious from the first-party layer alone.
+
+8. Third-party Omron tracking infrastructure.
+Related rules: R004, R052, and R072.
+Status: highly suspected.
+Files:
+`app\myvitale\sources\jp\co\omron\healthcare\matSystem\constants\ServerInfo.java:10`
+`app\myvitale\sources\jp\co\omron\healthcare\communicationlibrary\ble\BLEErrorInfo.java:61-64`
+`app\myvitale\sources\jp\co\omron\healthcare\matSystem\BigQueryREST.java:31-41`
+`app\myvitale\sources\jp\co\omron\healthcare\matSystem\BigQueryREST.java:45-65`
+`app\myvitale\sources\jp\co\omron\healthcare\matSystem\utils\RequestFormatter.java:136`
+Step by step:
+The SDK defines a Firebase-hosted `bqInsert` root. The BLE error path calls `sendBigQuery`. `BigQueryREST` creates or retrieves a UUID. It adds common device information to the record. It formats a request JSON object. It caches the JSON. It posts an insertion runnable on a handler thread. The request formatter produces the final Firebase URL.
+Boundary:
+This is solid evidence of SDK-side reporting infrastructure. It is not solid evidence that health measurements themselves were sent in this sample.
+
+9. Boundaries.
+Low rules:
+Weak TLS and HTTP misuse rules. Deep-link rules. Provider abuse rules. Dynamic code loading rules. Facebook and scan-profiling rules. Media exfiltration rules.
+Boundary:
+I did not find a first-party trust-all certificate manager. I did not find an always-true hostname verifier. I did not find a deep-link entry into the health flow. I did not find provider exposure. I did not find camera or microphone upload paths. These are exactly the places where the original files were careful, and I am keeping the same boundary.
+
+10. Server URL.
+Status: highly suspected as a real engineering risk.
+Files:
+`app\myvitale\sources\com\myvitale\bleconnection\PreferenceManager.java:36-41`
+`app\myvitale\sources\com\myvitale\bleconnection\features\authentication\presentation\AuthPresenter.java:202-203`
+`app\myvitale\sources\com\myvitale\bleconnection\features\users\presentation\presenter\UsersListPresenter.java:397-398`
+`app\myvitale\sources\com\myvitale\bleconnection\features\prefs\PreferencesActivity.java:125-132`
+Impact:
+The value is easy to change from multiple UI paths. The remote clients later rebuild their request URLs from it. That means the setting is not just cosmetic. It participates in the real request destination choice.
+Boundary:
+I still do not see an HTTP downgrade. I still do not see broken certificate checks.
+
+
+

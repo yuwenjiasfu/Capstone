@@ -1,0 +1,117 @@
+1. Health.
+Related rules: `BR018` and `BR025` are `confirmed`.
+Files:
+`app\weighttrack\resources\AndroidManifest.xml:57-62`
+`app\weighttrack\sources\com\ikdong\weight\model\Weight.java:18`
+`app\weighttrack\sources\com\ikdong\weight\model\Weight.java:20-61`
+`app\weighttrack\sources\com\ikdong\weight\model\Weight.java:63-188`
+`app\weighttrack\sources\com\ikdong\weight\model\Goal.java:15`
+`app\weighttrack\sources\com\ikdong\weight\model\Goal.java:18-42`
+`app\weighttrack\sources\com\ikdong\weight\model\Image.java:18`
+`app\weighttrack\sources\com\ikdong\weight\model\Image.java:28-97`
+`app\weighttrack\sources\com\ikdong\weight\activity\WeightInputActivity.java:397-407`
+Chain:
+The Manifest declares the ActiveAndroid database name `WTA.mp3`. `Weight` is a real persistent model with columns for weight, BMI, BMR, fat, muscle, water, heart rate, waist, wrist, hip, forearm, chest, belly, thighs, calves, and diary-like fields. `Goal` adds age, height, sex, target weight, and body fat fields. `Image` stores calorie, food, diary, and image-related data. `WeightInputActivity` then calls `save()` on the current `Weight` model, so the chain is not just a schema description. It is a live app path from user-entered body data into a local SQLite-backed model store.
+Limits:
+There is no extracted runtime DB in the evidence set, so the file should not pretend it already shows a real user's plain-text records. The confirmed part is the model and persistence path.
+
+2. Export.
+Related rules: `BR027` is `confirmed`.
+Files:
+`app\weighttrack\resources\AndroidManifest.xml:18`
+`app\weighttrack\resources\AndroidManifest.xml:53`
+`app\weighttrack\sources\com\ikdong\weight\widget\fragment\b.java:135-147`
+`app\weighttrack\sources\com\ikdong\weight\widget\fragment\b.java:263-268`
+`app\weighttrack\sources\com\ikdong\weight\util\n.java:27-31`
+`app\weighttrack\sources\com\ikdong\weight\util\n.java:34-46`
+`app\weighttrack\sources\com\ikdong\weight\util\n.java:67-84`
+`app\weighttrack\sources\com\ikdong\weight\util\f.java:22-35`
+`app\weighttrack\sources\com\ikdong\weight\util\f.java:38-52`
+`app\weighttrack\sources\com\ikdong\weight\util\aj.java:27-43`
+Chain:
+The app requests external-storage access and uses legacy external-storage mode. In the backup UI, `widget\fragment\b.java` shows the external path and asks for write permission. `util\n.java` contains the raw copy path from `/data/com.ikdong.weight/databases/WTA.mp3` to external `WTA.data`, and it uses `FileChannel.transferTo(...)` to perform the copy. `util\f.java` reads the `Weight` list, serializes it with `WeightSerializer`, and writes `weight_backup.json` to `/WeightTrack`. `util\aj.java` creates CSV output. The same fragment also shares the exported DB file through `ACTION_SEND`.
+Limits:
+Android version, scoped-storage behavior, and user authorization will change who can read the exported files afterward, but the app's own export and share behavior is already confirmed by code.
+
+3. Tokens.
+Related rules: `BR026` is `confirmed`.
+Files:
+`app\weighttrack\sources\com\ikdong\weight\util\g.java:465-467`
+`app\weighttrack\sources\com\ikdong\weight\util\g.java:639-648`
+`app\weighttrack\sources\com\ikdong\weight\activity\SyncFitbitActivity.java:316-340`
+`app\weighttrack\sources\com\ikdong\weight\integration\withings\a\b.java:42-52`
+`app\weighttrack\sources\com\ikdong\weight\integration\withings\a\b.java:102-108`
+`app\weighttrack\sources\com\ikdong\weight\integration\withings\a\b.java:113-115`
+`app\weighttrack\sources\com\ikdong\weight\activity\WithingsActivity.java:54-58`
+`app\weighttrack\sources\com\ikdong\weight\activity\WithingsActivity.java:115-117`
+`app\weighttrack\sources\com\ikdong\weight\activity\WithingsActivity.java:223-226`
+Chain:
+`util\g.java` writes strings into ordinary SharedPreferences under `worktrack_setting`. `SyncFitbitActivity` exchanges the OAuth code for a Fitbit token and then stores the resulting access token through that utility. The same utility later reads the stored token and checks its expiry. The Withings path is similar. `integration\withings\a\b.java` exchanges the code for a token, stores token JSON in `INT_WITHINGS_TOKEN`, and reads it back later. `WithingsActivity` also carries older token, secret, and user-id storage fields. This is why the plain SharedPreferences token rule stays confirmed.
+Limits:
+There is no extracted preference XML here. The finding is based on save and load code, not on a real device dump.
+
+4. Backup.
+Related rules: `BR028` is `confirmed`.
+Files:
+`app\weighttrack\resources\AndroidManifest.xml`
+Chain:
+The Manifest sets `android:allowBackup="true"`. In the same app, sensitive health measurements and third-party OAuth tokens are kept locally in SQLite and SharedPreferences. The original review correctly treated that combination as enough for a confirmed backup-surface finding, while still refusing to claim that adb backup or device transfer was actually reproduced in this evidence set.
+Limits:
+No device backup test was run, so the note should stay at configuration and local-state level.
+
+5. Cloud.
+Related rules: `BR091` is `confirmed`. `BR094` stays `not_supported`.
+Files:
+`app\weighttrack\sources\com\ikdong\weight\firebase\FirebaseUtil.java:17-26`
+`app\weighttrack\sources\com\ikdong\weight\firebase\FirebaseUtil.java:41-56`
+`app\weighttrack\sources\com\ikdong\weight\activity\WeightInputActivity.java:415-424`
+`app\weighttrack\sources\com\ikdong\weight\activity\WeightInputActivity.java:466-475`
+`app\weighttrack\sources\com\ikdong\weight\service\BackupService.java:24-31`
+`app\weighttrack\sources\com\ikdong\weight\util\ad.java:13-82`
+Chain:
+`FirebaseUtil` points at `https://weighttrackassistant.firebaseio.com/prd/...`. The registration path uploads `age`, `weight`, `height`, `gender`, `country`, `BMI`, and `BMI` meaning into `init_profile`. After saving a `Weight`, `WeightInputActivity` can upload progress data to `users/{uid}/progress` and then start `BackupService`. `BackupService` reads unsynced weight entries and passes them into `util\ad.a(...)`. That helper builds a large map with `dateAdded`, `weight`, `weightMorning`, `weightNoon`, `weightNight`, `waist`, `wrist`, `hip`, `forearm`, `muscle`, `heartRate`, `water`, `bicep`, `fat`, `visceralFat`, `bones`, `bust`, `chest`, `belly`, `thighs`, `progress`, `bmr`, and more, then writes it into the Firebase sync reference. That is enough for a confirmed remote health-data endpoint path.
+Limits:
+The same mentor review kept `BR094` out because this evidence does not show the full identity-device-location-health combination in one API path. I am keeping that exact limit.
+
+6. HTTP.
+Related rules: `BR013` is `confirmed`.
+Files:
+`app\weighttrack\sources\com\ikdong\weight\activity\SyncWithingsActivity.java:100-102`
+`app\weighttrack\sources\com\ikdong\weight\integration\withings\a\b.java:35-39`
+`app\weighttrack\sources\com\ikdong\weight\integration\withings\a\b.java:42-52`
+`app\weighttrack\sources\com\ikdong\weight\integration\withings\a\a.java:26-30`
+`app\weighttrack\sources\com\ikdong\weight\activity\WithingsActivity.java:51`
+`app\weighttrack\sources\com\ikdong\weight\activity\WithingsActivity.java:112-130`
+`app\weighttrack\sources\com\ikdong\weight\activity\WithingsActivity.java:218-223`
+Chain:
+The current Withings authorization path still begins at `http://account.withings.com/oauth2_user/authorize2`, and `SyncWithingsActivity` reads the callback `code` from the deep link. Token exchange in the current path is HTTPS, and the report should keep that distinction. The APK also still contains the older `WithingsActivity` path that talks to `http://wbsapi.withings.net/measure` with OAuth token, secret, userid, and signature handling. That is the reason `BR013` stayed confirmed even after the final review. The current authorize path is plaintext in the current code, and the old measure path is plaintext code that still exists in the APK.
+Limits:
+The report should not say the old HTTP measure path definitely fires in the current normal UI flow. The mentor review explicitly kept that boundary, and I am keeping it too.
+
+7. Deep link.
+Related rules: `BR032`, `BR034`, and `BR035` are `confirmed`. `BR029` stays `supported_hypothesis`. `BR084` stays `not_testable`.
+Files:
+`app\weighttrack\resources\AndroidManifest.xml`
+`app\weighttrack\sources\com\ikdong\weight\activity\SyncFitbitActivity.java`
+`app\weighttrack\sources\com\ikdong\weight\activity\SyncWithingsActivity.java`
+`app\weighttrack\sources\com\ikdong\weight\activity\MeasureActivity.java`
+`app\weighttrack\sources\com\ikdong\weight\activity\NavigatorActivity.java`
+Chain:
+The Manifest exposes multiple `wta://` deep links, including callback routes for Fitbit and Withings and a measurement route. In the OAuth callback paths, the URI `code` value is read directly and passed into token-exchange logic. In the measurement path, `MeasureActivity` reads `PARAM_CATE` from the incoming URI and uses it to query and display local measurement data. The original mentor review kept a very specific wording here: the confirmed issue is that the sensitive measurement page does not go through the same unified pattern-lock or auth check as the `NavigatorActivity` path. That is a code fact. It is not proof that an outside attacker already dumped the full local database.
+Limits:
+There is no browser or adb reproduction in the evidence set, so the dynamic deep-link testing rule stays out.
+
+8. Logs.
+Related rules: `BR047` is `confirmed`. `BR080` stays `not_testable`.
+Files:
+`app\weighttrack\sources\com\ikdong\weight\activity\WithingsActivity.java`
+Chain:
+The static logging issue comes from the old `WithingsActivity` flow. After successful OAuth token handling and after successful measure-response handling, the code prints `strString` with `System.out.println(strString)`. Because those responses can include token or measurement content, the static code finding stays confirmed. The dynamic runtime log rule still stays out because there is no captured logcat output.
+
+9. Boundaries.
+Main points:
+BLE rules stay `not_supported` because the app does not show Bluetooth permissions or first-party BLE APIs.
+Custom TLS rules stay out because no trust-all `TrustManager` or `HostnameVerifier` path was found.
+ContentProvider rules stay out because the providers are not exported in the way those rules require.
+The independent OAuth `state` issue, wide provider-path issue, and import-integrity concern remain separate engineering items and should not be rewritten as stronger confirmed rule conclusions.
+

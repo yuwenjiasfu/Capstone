@@ -1,0 +1,161 @@
+1. Fetal BLE data to local files to logs.
+Related rules: R050, R051, and R054.
+Status: confirmed.
+Files:
+`app\healthcare\sources\com\yuwell\healthmanager\utils\Constants.java:17-19`
+`app\healthcare\sources\com\yuwell\healthmanager\view\impl\measure\fetus\FetalMeasureActivity.java:145-146`
+`app\healthcare\sources\com\yuwell\healthmanager\view\impl\measure\fetus\FetalMeasureActivity.java:154-155`
+`app\healthcare\sources\com\yuwell\healthmanager\view\impl\measure\fetus\FetalMeasureActivity.java:252`
+`app\healthcare\sources\com\yuwell\healthmanager\view\impl\measure\fetus\FetalMeasureActivity.java:256-257`
+`app\healthcare\sources\com\yuwell\healthmanager\view\impl\measure\fetus\FetalMeasureActivity.java:315-316`
+`app\healthcare\sources\com\yuwell\healthmanager\view\impl\home\FetusHome.java:60`
+`app\healthcare\sources\com\yuwell\base\remote\Ret.java:27`
+`app\healthcare\sources\com\yuwell\healthmanager\data\model\FetalHeartMeasurement.java:19`
+`app\healthcare\sources\com\yuwell\healthmanager\data\model\FetalHeartMeasurement.java:26-30`
+Step by step:
+The constants file defines where fetal raw data, audio, and screenshots will live. `FetalMeasureActivity` opens writable raw and audio files. The measurement path writes `bytesAudioData`. The same path writes `rawData`. When the measurement is finalized, the app creates a `FetalHeartMeasurement`. That object stores the measure time. It stores the fetal value. It stores the measurement length. It stores `localRawFilePath`. It stores `localAudioFilePath`. The home page later requests the recent fetal result. `FetusHome` logs that result. `Ret.toString()` includes the contained `data`. `FetalHeartMeasurement.toString()` expands the log to the value, timestamp, length, and both local file paths.
+Basis:
+The fetal result is not only saved. It is also expanded into a printable object form. That makes the logging chain specific and direct.
+Limit:
+I am not claiming a third-party server received those files. I am not claiming the log line was captured from a real device session.
+
+2. Manual health entry to ObjectBox.
+Related rules: R006, R051, and R054.
+Status: confirmed.
+Files:
+`app\healthcare\resources\res\layout\activity_bp_add.xml`
+`app\healthcare\resources\res\layout\activity_bg_add.xml`
+`app\healthcare\resources\res\layout\activity_bo_add.xml`
+`app\healthcare\resources\res\layout\activity_hts_add.xml`
+`app\healthcare\sources\com\yuwell\healthmanager\view\impl\add\BpAdd.java:90-92`
+`app\healthcare\sources\com\yuwell\healthmanager\view\impl\add\BoAdd.java:151-152`
+`app\healthcare\sources\com\yuwell\healthmanager\view\impl\add\HtsAdd.java:111-112`
+`app\healthcare\sources\com\yuwell\healthmanager\view\impl\add\BgAdd.java:170`
+`app\healthcare\sources\com\yuwell\healthmanager\data\source\DataRepository.java:50-60`
+`app\healthcare\sources\com\yuwell\healthmanager\data\source\BaseDAO.java:15`
+Step by step:
+The app exposes manual add screens for blood pressure, blood glucose, blood oxygen, and temperature. The add pages read those numeric values from UI controls. The app turns them into measurement entities. The repository layer holds the DAO references for the measurement types. `BaseDAO` resolves the ObjectBox box for the entity class. The value then becomes part of the local measurement history.
+Impact:
+The health-input finding is not only about BLE. The app also has direct user-entered health data flows.
+
+3. BLE health measurements to ObjectBox.
+Related rules: R006, R051, and R054 confirmed. BLE trust rules highly suspected.
+Files:
+`app\healthcare\sources\com\yuwell\healthmanager\data\source\DataRepository.java:50-60`
+`app\healthcare\sources\com\yuwell\healthmanager\data\source\DataRepository.java:66-70`
+`app\healthcare\sources\com\yuwell\bluetooth\le\manager\BPMManager.java`
+`app\healthcare\sources\com\yuwell\bluetooth\le\manager\GlucoseManager.java`
+`app\healthcare\sources\com\yuwell\bluetooth\le\manager\OximeterManager.java`
+`app\healthcare\sources\com\yuwell\bluetooth\le\manager\ThermometerManager.java`
+`app\healthcare\sources\com\yuwell\bluetooth\le\manager\FetusManager.java`
+`app\healthcare\sources\com\yuwell\healthmanager\db\gen\MyObjectBox.java:47-48`
+Step by step:
+The app scans and connects to supported health devices. The repository picks a manager class by device type. The manager receives GATT notifications or read results. The callback is translated into a health-specific entity. The repository and DAO layer save that entity into ObjectBox.
+Basis:
+The app really does persist health measurements from BLE devices. The exact device attack angle still needs more evidence, but the input and storage side do not.
+
+4. ObjectBox initialization and missing visible encryption.
+Related rules: R051 and R054.
+Status: confirmed.
+Files:
+`app\healthcare\sources\com\yuwell\healthmanager\HealthManagerApplication.java`
+`app\healthcare\sources\com\yuwell\healthmanager\db\ObjectBox.java`
+`app\healthcare\sources\com\yuwell\healthmanager\db\gen\MyObjectBox.java:47-48`
+Check:
+An ObjectBox encryption key. Keystore-based wrapping. SQLCipher. Any obvious local database crypto layer.
+Finding:
+Default-style ObjectBox initialization. Health entities registered for storage. No visible encryption layer around that storage.
+Boundary:
+I am confirming the weak design. I am not claiming I opened a live ObjectBox database from a phone.
+
+5. Excel export path.
+Related rules: R051 and R054 confirmed. R055 highly suspected.
+Files:
+`app\healthcare\sources\com\yuwell\healthmanager\viewmodel\DataViewModel.java`
+`app\healthcare\sources\com\yuwell\healthmanager\util\ExcelUtil.java`
+`app\healthcare\sources\com\yuwell\healthmanager\util\Const.java`
+`app\healthcare\sources\com\yuwell\healthmanager\view\impl\Data.java`
+Step by step:
+The user opens the data page. The view model reads stored health records. `ExcelUtil` writes an `.xls` export. The export lives in the app cache export folder. The page then uses FileProvider to hand the file to an external viewer.
+Impact:
+Exported Excel files are another local copy of health data. That copy is easier to move outside the app boundary than the raw ObjectBox store.
+Limit:
+I did not inspect a real post-use device image. So the exact recovery state after normal use stays below confirmed.
+
+6. Fetal screenshot path.
+Related rules: R051 and R054 confirmed. Media exfil rules not supported.
+Files:
+`app\healthcare\sources\com\yuwell\healthmanager\view\impl\measure\fetus\FhtResultActivity.java:408`
+`app\healthcare\sources\com\yuwell\healthmanager\view\impl\measure\fetus\FhtResultActivity.java:564`
+`app\healthcare\resources\res\xml\file_paths.xml:30`
+`app\healthcare\sources\com\yuwell\healthmanager\utils\Constants.java:19`
+Step by step:
+The fetal result page can generate a screenshot image. The image is written into the screenshot path. The same activity can read the saved fetal raw path. FileProvider paths are broad enough to support sharing flows.
+Boundary:
+What I see is a user-visible local file creation and sharing pattern. I do not see a background upload destination.
+
+7. Exported activity and intent-extra boundary.
+Related rules: R017 and R018.
+Status: highly suspected.
+Files:
+`app\healthcare\resources\AndroidManifest.xml:51,60,64,81,85,89,93,97,101,105,109,114,119,124,129,134,139,144,149,154,159,164,169,174,216`
+`app\healthcare\sources\com\yuwell\healthmanager\view\impl\result\BgResult.java:128`
+`app\healthcare\sources\com\yuwell\healthmanager\view\impl\result\BpResult.java:112`
+`app\healthcare\sources\com\yuwell\healthmanager\view\impl\result\HtsResult.java:135,148`
+`app\healthcare\sources\com\yuwell\healthmanager\view\impl\measure\fetus\FhtResultActivity.java:532`
+Chain:
+Many health-related pages are exported. Result pages read a `data` object from the intent. Measurement and result flows also read device or auto-measure style extras according to the original audit.
+Limit:
+I still did not run `adb shell am start` tests. I still did not show a crafted external intent causing data exposure or state mutation.
+
+8. WebView statistics path.
+Related rule: R034.
+Status: highly suspected.
+Files:
+`app\healthcare\sources\com\yuwell\healthmanager\view\impl\statistics\BgStatistic.java:168,179,218-219,268`
+`app\healthcare\sources\com\yuwell\healthmanager\view\impl\statistics\BpStatistic.java:159,170,209-210,254`
+`app\healthcare\sources\com\yuwell\healthmanager\view\impl\statistics\BoStatistic.java:99,166,172-173`
+`app\healthcare\sources\com\yuwell\healthmanager\view\impl\statistics\HtsStatistic.java:120,187,193-194`
+Step by step:
+Native code computes health statistics. The pages inject those values into JavaScript with `evaluateJavascript(...)`. The WebViews enable JavaScript. The WebViews enable DOM storage. The release sample also enables WebView debugging. The content source is local `file:///android_asset/...` HTML.
+Limit:
+I do not see remote HTML. I do not see a JS bridge. I do not see a network exfil path from these pages. So the real point is exposure to a weaker local rendering surface.
+
+9. BLE trust boundary.
+Related rules: R073, R074, R077, R078, R079, R080, R081, R082, and R084.
+Status: highly suspected.
+Files:
+`app\healthcare\sources\com\yuwell\healthmanager\viewmodel\MainViewModel.java:90`
+`app\healthcare\sources\com\yuwell\bluetooth\le\core\BleService.java`
+`app\healthcare\sources\com\yuwell\healthmanager\util\SettingUtil.java`
+`app\healthcare\sources\com\yuwell\bluetooth\BluetoothService.java:79`
+`app\healthcare\sources\com\yuwell\bluetooth\BluetoothService.java:222`
+`app\healthcare\sources\com\yuwell\bluetooth\le\manager\BPMManager.java`
+`app\healthcare\sources\com\yuwell\bluetooth\le\manager\GlucoseManager.java`
+`app\healthcare\sources\com\yuwell\bluetooth\le\manager\OximeterManager.java`
+`app\healthcare\sources\com\yuwell\bluetooth\le\manager\ThermometerManager.java`
+`app\healthcare\sources\com\yuwell\bluetooth\le\manager\FetusManager.java`
+Code:
+The app scans devices and logs device metadata. It picks a manager from device type. The managers read and subscribe to GATT characteristics. The app treats the returned values as measurement truth quickly. I did not see a visible first-party signature or provenance layer on top of that.
+Limit:
+I do not have a real peripheral. I do not have GATT traces. I do not have a mis-bonding or injection proof of concept.
+
+10. Notice path.
+Related rules: the network claims still stay low.
+Files:
+`app\healthcare\resources\AndroidManifest.xml:40,43,46`
+`app\healthcare\sources\com\yuwell\healthmanager\view\impl\setting\WebViewActivity.java:18-21`
+`app\healthcare\sources\com\yuwell\healthmanager\view\impl\setting\WebViewActivity.java:70`
+Visible:
+The app allows backup. The app allows cleartext. The app uses legacy external storage behavior. The settings page loads HTTP legal notice URLs into WebView.
+Limit:
+I did not see a first-party health API in this static sample. I did not see measurement uploads to third-party services. I did not see a first-party weak TLS override. So this remains an architecture weakness, not a confirmed health-data transmission finding.
+
+11. Boundaries.
+Low rules:
+R021 R022 R023 R024 R049 R052 R053 R059 R064 R065 R066 R085 to R096
+Boundary:
+No permissive trust manager. No always-true hostname verifier. No confirmed first-party analytics or third-party health upload path. No Facebook SDK chain. No silent media exfiltration chain. These are the exact places where cutting too much detail would make the report less reliable. So I am keeping the boundaries explicit here.
+
+
+

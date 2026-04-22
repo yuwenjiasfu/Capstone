@@ -1,0 +1,64 @@
+Healthcare.
+
+1. The app definitely captures and processes health input.
+Rule: R006.
+Status: confirmed.
+This is one of the strongest points in the healthcare files. The app has both manual entry and BLE measurement paths. The manual entry side is visible in `app\healthcare\resources\res\layout\activity_bp_add.xml`, `activity_bg_add.xml`, `activity_bo_add.xml`, and `activity_hts_add.xml`. That covers blood pressure, blood glucose, blood oxygen, and temperature style inputs. The BLE side is visible in the repository and manager classes. `app\healthcare\sources\com\yuwell\healthmanager\data\source\DataRepository.java:50-60` holds the DAO layer for the measurement entities. `app\healthcare\sources\com\yuwell\healthmanager\data\source\BaseDAO.java:15` gets the ObjectBox box for those entities. The entity set includes `BGMeasurement`, `BPMeasurement`, `OXYMeasurement`, `HtsMeasurement`, and `FetalHeartMeasurement`. That is enough to keep R006 confirmed. This is not based on one stray field name. It is a complete input and persistence design.
+
+2. Fetal health results really do enter logs.
+Rule: R050.
+Status: confirmed.
+This should stay confirmed. The reason is that the logging path is complete and specific. `app\healthcare\sources\com\yuwell\healthmanager\utils\Constants.java:17-19` defines the fetal raw, audio, and screenshot paths. `app\healthcare\sources\com\yuwell\healthmanager\view\impl\measure\fetus\FetalMeasureActivity.java:145-146` opens the raw and audio files. The same file at `:154-155` writes `bytesAudioData` and `rawData`. The same file at `:252` creates a `FetalHeartMeasurement`. The same file at `:256-257` stores the local raw and audio file paths into that object. `app\healthcare\sources\com\yuwell\healthmanager\view\impl\home\FetusHome.java:60` logs the recent fetal result. `app\healthcare\sources\com\yuwell\base\remote\Ret.java:27` includes the `data` object in `toString()`. `app\healthcare\sources\com\yuwell\healthmanager\data\model\FetalHeartMeasurement.java:19` and `:26-30` include value, measure time, and local file paths in `toString()`. So the log does not stop at a harmless object reference. It expands to the measurement value, the timestamp, and the local artifact paths.
+
+3. Local health storage is weak even without a device dump.
+Rules: R051 and R054.
+Status: confirmed.
+The key point is the storage design, not a runtime extraction claim. `app\healthcare\sources\com\yuwell\healthmanager\HealthManagerApplication.java` initializes ObjectBox. `app\healthcare\sources\com\yuwell\healthmanager\db\ObjectBox.java` uses the default builder path. `app\healthcare\sources\com\yuwell\healthmanager\db\gen\MyObjectBox.java:47-48` registers fetal raw and audio related fields. I did not see an encryption key passed into ObjectBox. I did not see Keystore protection around the database layer. I did not see SQLCipher or an equivalent wrapper. The app also stores fetal raw and audio files locally. That is enough to keep R051 and R054 confirmed at the design level. I am not claiming I extracted a live database from a device. I am confirming weak local protection in the shipped code.
+
+4. Export and sharing paths create more local copies of health data.
+Rules: R051 and R054 confirmed. R055 highly suspected.
+Status: mixed.
+This part is important because the data does not stay only inside one DB object. The app can export health records to Excel. It can also create fetal result screenshots and share them. The original report already kept the recovery claim lower because there was no device file system image. I am keeping that same limit. The copy-making behavior is clearly visible. The exact after-use recovery state on a real device is still below confirmed.
+
+5. Exported health pages are a real boundary issue, but still below confirmed impact.
+Rules: R017 and R018.
+Status: highly suspected.
+`app\healthcare\resources\AndroidManifest.xml:51,60,64,81,85,89,93,97,101,105,109,114,119,124,129,134,139,144,149,154,159,164,169,174,216` shows many exported activities and related components. These include data pages, statistic pages, measurement pages, result pages, and the WebView page.
+Intent:
+`app\healthcare\sources\com\yuwell\healthmanager\view\impl\result\BgResult.java:128`
+`app\healthcare\sources\com\yuwell\healthmanager\view\impl\result\BpResult.java:112`
+`app\healthcare\sources\com\yuwell\healthmanager\view\impl\result\HtsResult.java:135,148`
+`app\healthcare\sources\com\yuwell\healthmanager\view\impl\measure\fetus\FhtResultActivity.java:532`
+That is enough to say the component surface is wider than it needs to be. But there is still no adb proof that an outside caller can force data disclosure or state change end to end. So the component hijacking style rules stay at highly suspected.
+
+6. The statistic WebViews handle real health values, but the exfiltration step is still missing.
+Rule: R034.
+Status: highly suspected.
+`app\healthcare\sources\com\yuwell\healthmanager\view\impl\statistics\BgStatistic.java:168,179` injects blood glucose statistics into WebView JavaScript. The same file at `:218-219` enables JavaScript and DOM storage. The same file at `:268` enables WebView debugging. The blood pressure page does the same at `BpStatistic.java:159,170`, `:209-210`, and `:254`. The blood oxygen page does the same at `BoStatistic.java:99`, `:166`, and `:172-173`. The temperature page does the same at `HtsStatistic.java:120`, `:187`, and `:193-194`. So the WebView definitely receives real health statistics from native code. What stops this from becoming confirmed is the rest of the boundary. The HTML is loaded from local assets. I did not see `addJavascriptInterface`. I did not see a remote tracking endpoint in that chain. So the real finding is exposure to a weaker local rendering surface, not a confirmed data leak to the network.
+
+7. The BLE trust model looks weak in first-party code.
+Rules: R073, R074, R077, R078, R079, R080, R081, R082, and R084.
+Status: highly suspected.
+This is the same careful position the original notes took.
+`app\healthcare\sources\com\yuwell\bluetooth\le\manager\BPMManager.java`
+`app\healthcare\sources\com\yuwell\bluetooth\le\manager\GlucoseManager.java`
+`app\healthcare\sources\com\yuwell\bluetooth\le\manager\OximeterManager.java`
+`app\healthcare\sources\com\yuwell\bluetooth\le\manager\ThermometerManager.java`
+`app\healthcare\sources\com\yuwell\bluetooth\le\manager\FetusManager.java`
+all participate in GATT operations and measurement handling. The app trusts GATT callbacks quickly and turns them into saved health objects. I did not see visible first-party application-layer encryption. I did not see visible provenance checks for incoming measurement values. I did not see per-operation app identity verification in the first-party layer. That is enough for a strong hypothesis. It is still not enough for a confirmed BLE attack claim without a device and traces.
+
+8. Some broader posture rules stay supported but not fully upgraded.
+Rules: R057, R060, R068, and R069.
+Status: highly suspected.
+The app handles high-sensitivity health data. It logs fetal measurement objects. It keeps local copies in ObjectBox, cache, screenshots, and Excel exports. It enables backup. It enables cleartext globally. It uses legacy external storage behavior. It keeps many health-related components exported. Taken together, the overall posture is weaker than it should be for this kind of app. That is why these broader rules stay supported. They still do not need to be overstated beyond the evidence.
+
+9. The network and third-party upload claims are still not supported here.
+Low rules: R021, R022, R023, R024, R049, R052, R053, R059, R064, R065, and R066.
+Status: still too weak.
+This boundary matters. The app does allow cleartext and has an HTTP legal notice page. But the current sample did not show a first-party health upload API. It also did not show a first-party weak TrustManager or HostnameVerifier. It also did not show a confirmed analytics or third-party health sharing path. So I am not rewriting those as positive findings.
+
+10. The deep link, JS bridge, and media exfiltration style claims still do not fit.
+Low rules: R025 to R033, R085 to R096.
+Status: still too weak.
+I did not see a real custom deep-link chain. I did not see a JavaScript bridge. I did not see Facebook SDK behavior. I did not see silent background media exfiltration. The fetal screenshots and audio files exist, but the visible path is local creation and user sharing. That is a different claim and the original notes kept that distinction.
+

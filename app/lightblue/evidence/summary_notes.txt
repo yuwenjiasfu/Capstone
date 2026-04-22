@@ -1,0 +1,49 @@
+Lightblue.
+THE KEY is the represent of API key, it can not be uploaded to GitHub, so I just use the word THE KEY
+
+1. The only point that clearly stays confirmed is the hardcoded Mailchimp key.
+Rule: BR016.
+Status: confirmed.
+This is still the cleanest confirmed item in the LightBlue material. `app\lightblue\sources\O5\a.java:137` initializes the Mailchimp side with `THE KEY`. `app\lightblue\sources\X5\C4736b.java:34` builds the Mailchimp endpoint `https://%s.api.mailchimp.com/clientapi/1.0/`. `app\lightblue\sources\X5\InterfaceC4737c.java:16` and `:19` define `contacts/events` and `contacts`. `app\lightblue\sources\A5\b.java:43` shows the audience work request uses an email address. `app\lightblue\sources\A5\d.java:39-43` adds Android, tablet, and phone style tags. So the package does contain extractable third-party service key material and a working Mailchimp flow around it. The careful limit is the same as in the original review. I am confirming extractable Mailchimp SDK key material. I am not claiming account takeover. I am not claiming that the key is a user password or private signing secret.
+
+2. The Adafruit credential storage design still looks weak, but it does not cross into confirmed.
+Rule: BR026.
+Status: highly suspected.
+`app\lightblue\sources\O5\a.java:40` creates `app_preferences`. `app\lightblue\sources\L5\a.java:2303-2304` defines `ADAFRUIT_IO_USERNAME` and `ADAFRUIT_IO_SECRET_KEY`. `app\lightblue\sources\L5\a.java:2332` is the write path that stores those values. I did not see an encryption wrapper around that preference storage. I did not see Android Keystore protecting that pair. But I also did not extract a real device file. So I am keeping the original boundary. The storage design is weak. The existence of a real stored user secret on a device is still not demonstrated.
+
+3. BLE characteristic values can be bridged to Adafruit IO.
+Rules: BR091, BR097, and BR098.
+Status: highly suspected.
+`app\lightblue\sources\O5\a.java:72` sets the Retrofit base URL to `https://io.adafruit.com/api/v2/`. `app\lightblue\sources\P5\a.java:56-66` defines feed list, feed check, feed creation, and feed data POST methods. Those methods send the secret in `x-aio-key`. `app\lightblue\sources\P5\b.java:28` shows the upload payload shape as `AdafruitDataPayload(value=...)`. `app\lightblue\sources\com\punchthrough\lightblueexplorer\ui\characteristicdetail\b.java:779-808` stores incoming bytes and checks whether the UUID is mapped to Adafruit. The same file at `:964-972` starts the actual upload coroutine when a mapped UUID is updated. The same file at `:1324-1329` is the binding path that saves username, secret, data type, and feed name. That is a real static bridge from BLE values to a third-party cloud recipient. But it still stays below confirmed. I do not have packet capture. I do not have a real configured user account. I do not know whether the bytes are health data, location data, or just ordinary BLE values in a given session.
+
+4. Firebase Analytics and Crashlytics are real in startup code, but consent timing still needs runtime proof.
+Rule: BR092.
+Status: highly suspected.
+`app\lightblue\sources\com\punchthrough\lightblueexplorer\common\App.java:99-107` runs on startup and enables Firebase Analytics and Crashlytics when Firebase apps exist. `app\lightblue\sources\i5\d.java:18-21` gets the Firebase Analytics and Crashlytics instances. `app\lightblue\sources\I5\a.java` contains events for scan, connect, read, write, share, and `cloud_connect_adafruit_success`. `app\lightblue\sources\I5\b.java` contains parameters like `app_version`, `android_api_level`, and `device_model`. `app\lightblue\resources\com.punchthrough.lightblueexplorer.apk\res\xml\preferences.xml:4-7` sets `send_usage_data` default to `true`. `app\lightblue\resources\com.punchthrough.lightblueexplorer.apk\AndroidManifest.xml:29` and `:44` request ad-related identifier permissions. That is enough to keep the telemetry concern alive. It is still not enough to prove what was sent before or after consent.
+
+5. The BLE logging surface is real, but the system-log leak is still not fully confirmed.
+Rule: BR047.
+Status: highly suspected.
+`app\lightblue\sources\K5\b.java:137-141` logs scan discoveries with device name and MAC address. `app\lightblue\sources\J5\C1754d.java:216-217` logs bond state changes. The same file at `:294` logs connection attempts with address and name. The same file at `:332` logs writes with UUID and payload. The same file at `:342` logs characteristic reads. The same file at `:1314` and `:1572` handles changed characteristic values. `app\lightblue\sources\Q5\d.java:211` renders the log event with message, peripheral, UUID fields, and the value bytes as a string. `app\lightblue\sources\d9\a.java:78` and `:97` show the `Log.println` sink. That is enough to say the app constructs sensitive BLE logs. It is not enough to say I captured a real logcat leak of real medical values. So the logging point stays supported, not confirmed.
+
+6. The BLE application-layer protection gap is still only a strong hypothesis.
+Rules: BR061, BR067, BR068, and BR075.
+Status: highly suspected.
+`app\lightblue\sources\K5\b.java:227` starts BLE scanning. `app\lightblue\sources\J5\C1756f.java:44` calls `connectGatt(...)`. `app\lightblue\sources\J5\C1754d.java:332` and `:342` show the write and read paths. The same file at `:378` and `:403` deals with notification setup. The characteristic detail page can read, write, and subscribe to arbitrary characteristic values. I did not see a first-party app-level token or signature on top of those operations. I did not see provenance checks on incoming values before they become logs or cloud bridge candidates. That matches the original concern. It still does not become confirmed because LightBlue is a general BLE explorer. Without a specific target device, I cannot prove an actual unauthorized read or write against a sensitive peripheral.
+
+7. A few attractive claims still do not fit this app.
+Low rules: BR006 to BR013, BR021 to BR024, BR029 to BR035.
+Status: still too weak.
+I did not see a first-party cleartext production endpoint. I did not see a first-party weak TrustManager or HostnameVerifier. I did not see an exported sensitive provider. I did not see a BROWSABLE deep-link chain. So I am not upgrading those rules just because the app is BLE-related.
+
+8. The sample virtual device data is not proof of real user health collection.
+Rules that stay low around this point: BR018, BR097, and related health-category guesses.
+Status: still too weak on its own.
+The package does include `sample_virtual_devices.json`. It mentions services like heart rate, glucose, health thermometer, blood pressure, and location/navigation in the demo material. But the mentor review was right here. Sample GATT data inside an explorer app is not the same thing as evidence of real user medical data processing. So I am not using the demo file as a shortcut to stronger health-data claims.
+
+9. Boundaries.
+Rules that stay low around this point: BR021 to BR024 and BR029 to BR035.
+Status: still too weak.
+`app\lightblue\resources\com.punchthrough.lightblueexplorer.apk\AndroidManifest.xml:65` and `:76` expose launcher style activity surfaces. The same manifest at `:243`, `:318`, and `:344` exposes more components, but the original review still did not find a sensitive first-party deep-link path there. The provider side is narrower than it first looks. The FileProvider is not exported. I also did not find a BROWSABLE scheme or custom URI chain into sensitive BLE state. So I am keeping the component and provider side conservative here too.
+
+

@@ -1,0 +1,55 @@
+WeightTrack.
+
+1. Health.
+Rules: `BR018`.
+Status: `confirmed`.
+The app clearly handles health and body-measurement data. `Weight`, `Goal`, and `Image` models hold weight, BMI, BMR, fat, muscle, water, heart rate, waist, hip, chest, bicep, thigh, diary, calorie, age, height, sex, target weight, and related body fields. The original review was careful not to exaggerate this into medical diagnosis data, and I am keeping that wording. It is still plainly confirmed that the app processes sensitive health and body-measurement content.
+
+2. Local DB.
+Rules: `BR025`.
+Status: `confirmed`.
+Manifest metadata shows the ActiveAndroid database name `WTA.mp3`, and the code uses plain model persistence without an application-layer encryption wrapper. The same report also points out that raw database export code exists elsewhere in the app, which makes the local database finding stronger than a generic SQLite dependency claim. The safe version is still the same as before: sensitive health data is stored locally in SQLite, and no SQLCipher or `Encrypted*` wrapper was found in the first-party code.
+
+3. Tokens.
+Rules: `BR026`.
+Status: `confirmed`.
+The OAuth tokens are not just present in memory for one request. Fitbit access tokens and Withings token or secret material are written into ordinary SharedPreferences under `worktrack_setting`, and later read back for API use. That is why the token-storage point stays confirmed. The original mentor review also kept the right limit here: this is plain local persistence of sensitive credentials, not proof that another normal app definitely read them.
+
+4. Export.
+Rules: `BR027`.
+Status: `confirmed`.
+This app has a real export chain from sensitive local data to external storage. It can copy the raw database from `/data/.../WTA.mp3` to `/WeightTrack/WTA.data`, export weight records to `/WeightTrack/weight_backup.json`, write CSV files, and share the exported DB file through `ACTION_SEND`. Because the health models and the database schema are already confirmed, this is a full data-export path, not just a file-name string.
+
+5. Backup.
+Rules: `BR028`.
+Status: `confirmed`.
+`android:allowBackup="true"` is set in the Manifest, and the app also stores sensitive local health data and third-party tokens. The report was careful not to claim that adb backup was already reproduced, and I am keeping that same boundary. The confirmed part is the backup-capable configuration plus sensitive local state, not a completed extraction.
+
+6. HTTP.
+Rules: `BR013`.
+Status: `confirmed`.
+The original materials were very explicit that the current and legacy Withings paths must be described separately. The current OAuth authorize entry still uses `http://account.withings.com/oauth2_user/authorize2`, so the current path has a confirmed plaintext entry point. The old `WithingsActivity` path also contains `http://wbsapi.withings.net/measure` together with OAuth token, userid, and signature handling. That older path is confirmed as code in the APK, but it should not be described as a guaranteed normal runtime path without further testing.
+
+7. Keys.
+Rules: `BR016`.
+Status: `confirmed`.
+The package contains Fitbit Basic Authorization material, a Withings `client_secret`, Google or Firebase keys, AdMob identifiers, and backup-related API material. The original review kept the important nuance that not every embedded key is the same kind of secret and not every one is automatically high impact. I am keeping that exact boundary. The confirmed part is the hardcoded presence of keys and credentials in code or resources.
+
+8. Deep link.
+Rules: `BR032`, `BR034`, and `BR035` are `confirmed`. `BR029` stays `supported_hypothesis`.
+Status: mixed.
+The Manifest exposes multiple `wta://` deep links. Fitbit and Withings callback links pass the `code` parameter into token-exchange logic, so URI parameters really do reach sensitive internal actions. `wta://measure` can open `MeasureActivity`, and that activity reads `PARAM_CATE` and shows measurement data without going through the pattern-lock flow that lives in `NavigatorActivity`. The original mentor review kept the wording narrow here, and I want to keep it narrow too: the confirmed part is that a sensitive measurement page does not have the same unified auth or pattern check, not that a remote attacker already extracted the whole database.
+
+9. Logs.
+Rules: `BR047` is `confirmed`. `BR080` stays `not_testable`.
+Status: mixed.
+The static log issue is real because the legacy `WithingsActivity` prints OAuth token responses and measurement responses with `System.out.println(strString)`. That is enough for the code-level logging rule. It is still not enough to say the values definitely appeared in real device logs because there is no logcat in the current evidence set.
+
+10. Cloud.
+Rules: `BR091` is `confirmed`. `BR001`, `BR002`, `BR003`, and `BR092` stay `supported_hypothesis`.
+Status: mixed.
+The Firebase sync chain is one of the strongest confirmed items in the app. `FirebaseUtil`, `WeightInputActivity`, `BackupService`, and `util.ad` show that weight, progress, waist, hip, muscle, heart rate, body fat, water, visceral fat, diary, and many other fields are assembled into payloads and written to `https://weighttrackassistant.firebaseio.com/prd/sync`. That is a real endpoint and payload path. The ad-id or third-party identifier items stay lower because the app only shows permissions and SDK presence there, not captured third-party payloads.
+
+11. Boundaries.
+Main points: the exclusions matter here and should stay explicit.
+BLE rules are out because the app does not show Bluetooth permissions or BLE APIs in the first-party code. ContentProvider rules are out because the providers are not exported in the way those rules need. `BR094` stays `not_supported`, so I am not exaggerating Firebase `country` and health fields into a full identity-device-location-health combination. `BR095` also stays `not_supported`, so I am not rewriting the HTTP endpoint issue into a weak TLS finding. The independent OAuth `state` issue also remains a supported engineering concern, not a confirmed account-takeover claim.

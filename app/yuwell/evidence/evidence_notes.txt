@@ -1,0 +1,129 @@
+1. Transport.
+Related rules: BR006 and BR008 confirmed. BR095 supported_hypothesis.
+Status: mixed.
+Files:
+`app\yuwell\resources\AndroidManifest.xml:82`
+`app\yuwell\resources\res\xml\network_security_config.xml:3`
+`app\yuwell\sources\BuildConfig.java:12-13`
+`app\yuwell\sources\ServiceGenerator.java`
+`app\yuwell\evidence\03_detailed_findings_static_cloud_ble.md:5-20`
+Chain:
+`AndroidManifest.xml:82` points the app to `@xml/network_security_config`. `network_security_config.xml:3` sets `<base-config cleartextTrafficPermitted="true"/>`. That closes the policy level issue immediately. It is enough for BR006 and BR008. The review then checked whether the app should be described as actually sending health data over HTTP. It did not support that stronger claim. `BuildConfig.java:12-13` shows the main business host is HTTPS. `ServiceGenerator.java` uses OkHttp and Retrofit. The material does not show a first party business endpoint already hardcoded to HTTP. So the right wording stays narrow. The policy allows cleartext. It does not prove an observed cleartext health sync. BR095 stays supported_hypothesis because other paths, redirects, SDK requests, or future config changes would not be blocked by the package policy.
+Limits:
+No packet capture was included. No actual HTTP login or sync request was included.
+
+2. Entry.
+Related rules: BR029 and BR059 confirmed. BR035 supported_hypothesis.
+Status: mixed.
+Files:
+`app\yuwell\resources\AndroidManifest.xml:275-284`
+`app\yuwell\sources\com\yuwell\uhealth\view\base\web\UHealthWebViewActivity.java:47,63`
+`app\yuwell\evidence\03_detailed_findings_static_cloud_ble.md:28-58`
+`app\yuwell\evidence\04_final_review_and_corrections.md:66-79`
+Chain:
+`AndroidManifest.xml:275-284` exports `UHealthWebViewActivity`. The action is `com.yuwell.uhealth.action.START_ACTIVITY`. `UHealthWebViewActivity.java:47` reads the `title` extra. `UHealthWebViewActivity.java:63` reads the `url` extra and loads it. The detailed findings also note `WebViewClient` line 29 keeps following redirected URLs with `loadUrl`. The report says there is no host whitelist. It says there is no scheme restriction. It says there is no caller verification. That closes the exposed entry plus controllable URL chain. The same final review also keeps `SNInputActivity` as another exported first party entry. This is enough for BR029 and BR059. The deeper action claim still stays lower. I did not see token injection or bridge abuse proved in code. I also did not see a classic deep link parser path here. So BR035 remains a weaker external entry hypothesis rather than a confirmed sink exploit.
+Limits:
+No crafted intent was executed in the material. No WebView data leak was shown in the material.
+
+3. Prefs.
+Related rules: BR026 confirmed. BR082 not_testable.
+Status: mixed.
+Files:
+`app\yuwell\sources\PreferenceSource.java:59-64,123,169,180,209-214,315-317,333-360,377-380,397,428,432,455-456,476-478`
+`app\yuwell\evidence\03_detailed_findings_static_cloud_ble.md:61-89`
+Chain:
+`PreferenceSource.java:59-64` reads and caches `access_token`. `PreferenceSource.java:315-317` saves `access_token`. `PreferenceSource.java:209-214` reads `refress_token`. `PreferenceSource.java:476-478` saves `refress_token`. `PreferenceSource.java:123` reads `current_familymember`. `PreferenceSource.java:377-380` serializes and saves the family member JSON. The detailed findings note that this family object includes name, nickname, birthday, height, weight, waistline, phone, and photo style fields. `PreferenceSource.java:89,93,101,149,192` reads device names for blood glucose, oxygen, blood pressure, fetal heart, and Mox flows. `PreferenceSource.java:333-360,397,455-456` saves those device names. `PreferenceSource.java:169,180,428,432` stores last object or last measurement cursors. That closes BR026. The logout boundary is still separate. `clearLoginInfo()` at lines 33, 38, and 39 clears current family member and tokens. The detailed review still says residual behavior was not tested dynamically. That is why BR082 remains not_testable. The code shows partial cleanup. It does not show the post logout device sandbox state.
+Limits:
+No post logout sandbox export was provided. No runtime preference dump was provided.
+
+4. DB.
+Related rules: BR025 and BR018 confirmed. BR091, BR094, and BR097 supported_hypothesis.
+Status: mixed.
+Files:
+`app\yuwell\sources\DatabaseServiceImpl.java:703-704,1208-1224,1498,1508`
+`app\yuwell\sources\DatabaseManager.java:32-36`
+`app\yuwell\sources\BPMeasurement.java:13,47-85`
+`app\yuwell\sources\BGMeasurement.java:11,47-53,71-84`
+`app\yuwell\sources\OxyData.java:15-65,23-65,195`
+`app\yuwell\sources\FamilyMember.java:16-75`
+`app\yuwell\evidence\03_detailed_findings_static_cloud_ble.md:92-121`
+`app\yuwell\evidence\02_rule_by_rule_mapping.md:117,120,123`
+Chain:
+`DatabaseServiceImpl.java:703-704` returns database name `uhealth.db`. `DatabaseManager.java:32-36` creates it with ordinary xUtils `DbUtils.create(...)`. So the base storage layer is plain app database code, not SQLCipher. `BPMeasurement.java:13` names table `BP_MEASUREMENT`. `BPMeasurement.java:47-85` includes DBP, SBP, pulse rate, device SN, terminal MAC, and member id. `BGMeasurement.java:11` names table `BG_MEASUREMENT`. `BGMeasurement.java:47-53` includes terminal MAC and device SN. `BGMeasurement.java:71-84` includes medicine and measure value style fields. `OxyData.java:15-65` includes heart rate, SpO2, device SN, terminal MAC, member id, and device id. `FamilyMember.java:16-75` includes birthday, height, nickname, phone, photo, sex, waistline, and weight. That is enough for BR025 and BR018. The upload chain starts at `DatabaseServiceImpl.getUploadDataArray()`. `DatabaseServiceImpl.java:1208` starts processing upload rows. `DatabaseServiceImpl.java:1209` gets the mapping from local fields to upload fields. `DatabaseServiceImpl.java:1210` builds a query using table, operateTime, accountId, and `GlobalContext.getAppId()`. `DatabaseServiceImpl.java:1214-1220` iterates the cursor and creates JSON. `DatabaseServiceImpl.java:1224` returns the JSON string. The rule mapping also states `SyncDataRequest` carries `UID`, `entityKey`, `encrypted uploadData`, and `deviceId`. That is a strong static endpoint preparation chain. It is enough for supported_hypothesis on BR091 and BR094. `OxyData` entering the same sync path is enough for BR097 supported_hypothesis. The live upload still was not captured.
+Limits:
+No real account sync capture was included. No server side receipt was included. The supported level is kept because the static code closes the path but not the observation.
+
+5. Logs.
+Related rules: BR047 and BR027 confirmed. BR080 not_testable.
+Status: mixed.
+Files:
+`app\yuwell\sources\SyncService.java:69-70,114-125`
+`app\yuwell\sources\UHBleCallbacksHandler.java:197,274,299`
+`app\yuwell\sources\MoxManager.java:44,56,232`
+`app\yuwell\sources\Logger.java:55`
+`app\yuwell\sources\FileManager.java:14-16,35-36`
+`app\yuwell\sources\LogUploadUtil.java:28-49`
+`app\yuwell\sources\UploadAPI.java:14`
+`app\yuwell\evidence\03_detailed_findings_static_cloud_ble.md:123-158`
+Chain:
+`SyncService.java:69` decrypts `syncData.entityValue`. `SyncService.java:70` writes the decrypted content to `Logger.i`. `SyncService.java:114` obtains `uploadDataArray`. `SyncService.java:115` logs the upload JSON before encryption. `SyncService.java:118-123` builds a map containing `UID`, `entityKey`, `uploadData`, `accessToken`, and `deviceId`. `SyncService.java:125` logs `uploadData before encrypt` again. `UHBleCallbacksHandler.java:197` logs the BLE address. `UHBleCallbacksHandler.java:274` logs the glucose data JSON. `UHBleCallbacksHandler.java:299` logs temperature data. `MoxManager.java:44,56,232` logs received bytes, sent bytes, and parsed data. `Logger.java:55` enables AndroidPrinter and FilePrinter. The configured directory is external cache `LOG`. `FileManager.java:14-16,35-36` resolves the external cache path and the `LOG` directory. `LogUploadUtil.java:28-49` reads the log directory, zips the files, and uploads them. `UploadAPI.java:14` defines `api/logger/upload`. This is why BR047 and BR027 both stay confirmed. The chain is not only a logging statement. It is sensitive source to logger to file to upload. BR080 still stays separate. A dynamic rule needs a real log file or logcat sample from a running session.
+Limits:
+No runtime log file was included. No log upload transaction was captured.
+
+6. Crypto.
+Related rules: BR017.
+Status: confirmed.
+Files:
+`app\yuwell\sources\EncryptUtil.java:22,56,85`
+`app\yuwell\sources\SyncService.java:120,131`
+`app\yuwell\sources\DatabaseServiceImpl.java:1498,1508`
+`app\yuwell\evidence\03_detailed_findings_static_cloud_ble.md:162-180`
+Chain:
+`EncryptUtil.java:22` hardcodes `8yu&well`. `EncryptUtil.java:56` uses `DES/ECB/NoPadding` to decrypt. `EncryptUtil.java:85` uses `DES/ECB/PKCS7Padding` to encrypt. `SyncService.java:120` and `:131` wrap upload JSON with `EncryptUtil.encryptDES`. `DatabaseServiceImpl.java:1498` and `:1508` decrypt server data with `EncryptUtil.decryptDES`. That means the hardcoded key and DES or ECB logic sits inside the actual sync path. The final review kept the claim carefully worded. The code confirms the fixed client side crypto construction. It does not automatically prove plaintext on the network. It does not automatically prove the server lacks its own validation.
+Limits:
+No need to claim more than the code shows. The fixed key DES or ECB design itself is enough for confirmation.
+
+7. SDKs.
+Related rules: BR040 and BR016 confirmed. BR041 supported_hypothesis. BR077 and BR092 not_testable.
+Status: mixed.
+Files:
+`app\yuwell\sources\GlobalContext.java:59-68,72,76,83-84,202,208`
+`app\yuwell\sources\Startup.java:157-158`
+`app\yuwell\resources\AndroidManifest.xml:677-678,733-741,999-1018`
+`app\yuwell\evidence\03_detailed_findings_static_cloud_ble.md:184-206`
+Chain:
+`GlobalContext.java:202` sets `JCollectionAuth` false. `GlobalContext.java:208` performs UMeng pre init. `GlobalContext.java:59-68` performs JPush init and then sets `JCollectionAuth` true. `GlobalContext.java:72` initializes Udesk. `GlobalContext.java:76` initializes UMeng. `GlobalContext.java:83-84` initializes Youzan. `Startup.java:157` unconditionally initializes Youzan. `Startup.java:158` preloads the shop URL. `AndroidManifest.xml:677-678` contains `JPUSH_APPKEY`. `AndroidManifest.xml:733-741` contains OPPO app keys and secrets. `AndroidManifest.xml:999-1018` contains mPaaS dev workspace and related gateway or logging config. This is enough for BR040 and BR016. The static initialization and key exposure are real. BR041 stays lower because the complete consent gate and traffic timing are not closed by source alone. BR077 and BR092 stay not_testable because there is no packet capture proving pre consent third party traffic or specific third party payload fields.
+Limits:
+No startup traffic capture was included. No policy text comparison was included.
+
+8. BLE.
+Related rules: BR066 confirmed. BR061-BR065, BR067-BR069, BR073-BR075 supported_hypothesis. BR091, BR094, and BR097 also supported_hypothesis through the same broader path.
+Status: mixed.
+Files:
+`app\yuwell\sources\UHBleCallbacksHandler.java:102-126,197,269-281,274,299,443-444`
+`app\yuwell\sources\DatabaseServiceImpl.java:1208-1224,1374-1383`
+`app\yuwell\sources\BPMeasurement.java:47-85`
+`app\yuwell\sources\BGMeasurement.java:47-53,71-84`
+`app\yuwell\sources\OxyData.java:23-65,195`
+`app\yuwell\sources\MoxManager.java:79,87-90,185-221,231-233`
+`app\yuwell\evidence\03_detailed_findings_static_cloud_ble.md:209-251`
+`app\yuwell\evidence\02_rule_by_rule_mapping.md:80-93,117,120,123`
+Chain:
+The blood pressure path starts in `UHBleCallbacksHandler.onBloodPressureMeasurementRead()`. `UHBleCallbacksHandler.java:102-126` receives `BPMData`. The detailed notes say lines `103` and `110` derive device serial style fields from the BLE address. The same method writes SBP, DBP, pulse rate, and level. It also attaches the current family member id. `BPMeasurement` marks these fields for synchronization. So BP data moves from BLE callback into the sync eligible local model. The glucose path starts at `UHBleCallbacksHandler.java:269-281`. The detailed notes say `:274` logs the glucose JSON. The same method writes measurement value, measure point, measure time, level, and device SN. `BGMeasurement` contains `measureValue`, `medicine`, `terminalMAC`, and `deviceSN`. That moves glucose related data into local storage and later sync preparation. The oxygen path starts at `UHBleCallbacksHandler.java:443-444`. That call goes into `DatabaseServiceImpl.saveOXYData()`. `DatabaseServiceImpl.java:1374-1383` creates `OxyData`. `OxyData.java:23-65` contains heart rate, SpO2, member id, device SN, terminal MAC, and device id. `OxyData.java:195` shows `toString()` includes many of those fields, which also matters for the logging chain. The Mox control path is separate and important. `MoxManager.java:87-90` obtains a custom characteristic. `MoxManager.java:79` enables notifications. `MoxManager.java:185-221` exposes powerOff, pullData, reset, setCustomModel, setLock, and turnLight operations. `MoxManager.java:231-233` logs the bytes and then writes the characteristic through the parent call. The rule mapping says custom service and characteristic UUIDs are visible in `MoxManager` and `Characteristic`. That is enough for BR066. The remaining attack rules stay lower because the source does not close a successful exploitation story. The code does not show an app specific HMAC, signature, or challenge before the measurement and command paths are used. That makes the hypothesis strong. It still needs a real peripheral and live traffic for confirmation. The sync side then loops back into the DB path. `DatabaseServiceImpl.getUploadDataArray()` at `1208-1224` converts local rows into JSON. `SyncService` encrypts and sends them. That is why BR091, BR094, and BR097 remain supported_hypothesis through the same broader static chain.
+Limits:
+No real device session was included. No BLE replay or spoof test was included. No final sync payload capture was included.
+
+9. Paths.
+Related rules: BR023 supported_hypothesis. BR021, BR022, BR024, BR013, BR020, and BR096 not_supported. BR019 supported_hypothesis only.
+Status: mixed.
+Files:
+`app\yuwell\resources\AndroidManifest.xml:527-535`
+`app\yuwell\resources\res\xml\file_paths.xml:30-32`
+`app\yuwell\sources\BuildConfig.java:12-13`
+`app\yuwell\evidence\04_final_review_and_corrections.md:156-176`
+`app\yuwell\evidence\02_rule_by_rule_mapping.md:44-49,49,51-53`
+Chain:
+`AndroidManifest.xml:527-535` declares the first party FileProvider with `exported=false` and `grantUriPermissions=true`. `file_paths.xml:30-32` contains `root-path name="root" path=""`. That is a broad path configuration and it deserves to stay visible. It does not automatically create a confirmed provider leak. The provider is not exported in the way BR021, BR022, or BR024 would need. So the final review keeps BR023 only as a supported_hypothesis configuration risk. The transport namespace boundary is also important. `BuildConfig.java:12-13` shows the main business host is HTTPS. The final review says the SOAPAction `http://www.yuwell.com` string is a namespace, not a transport URL. That is why BR013 stays not_supported. The health field boundary is also important. `BGMeasurement` has a `medicine` field. The rule mapping keeps BR019 only as a weak supported_hypothesis because it may only reflect meal or medication state, not a full prescription workflow. There is no mental health field set, so BR020 stays out. There is no strong medication upload chain, so BR096 stays out.
+Limits:
+No URI grant call chain was closed for FileProvider. No medication workflow proof stronger than the single field was included.
+

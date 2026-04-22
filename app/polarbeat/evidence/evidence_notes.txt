@@ -1,0 +1,82 @@
+1. TLS.
+Related rules: BR009, BR010, BR012, BR095.
+Status: confirmed.
+Files:
+`app\polarbeat\sources\defpackage\bqf.java:21,25,26`
+`app\polarbeat\sources\defpackage\bqh.java:33,38,63,68`
+`app\polarbeat\sources\defpackage\bqi.java:16-17`
+`app\polarbeat\sources\defpackage\bqj.java:16,20`
+`app\polarbeat\evidence\02_evidence_chains.md:19-48`
+Chain:
+`bqf.java:21` builds the URL ending in `/register/user`. `bqf.java:25` puts the password into JSON. `bqf.java:26` puts the username into JSON. So the register request really carries credentials. `bqh.java:33` defines the HTTP client builder. `bqh.java:38` sets `ALLOW_ALL_HOSTNAME_VERIFIER`. That closes the hostname verifier side immediately. `bqh.java:63` also adds basic authorization data from client configuration. `bqh.java:68` executes the request. The socket factory under that client is `bqi`. `bqi.java:16` uses `SSLContext.getInstance("TLS")`. `bqi.java:17` registers `new bqj(this)` as TrustManager. `bqj.java:16` leaves `checkClientTrusted` empty. `bqj.java:20` does not show full CA chain validation and only performs weak server checking. The evidence chain then states the flow step by step. Credentials move from local storage into `bqf`. `bqf` sends them through `bqh`. `bqh` uses the weak TLS client. That is enough for BR009 and BR010. Because this is an mHealth style account flow, BR012 also stays confirmed. The same exact chain supports BR095 because the cloud endpoint carrying credentials uses the weak TLS client.
+Limits:
+No MITM capture is required for the static rule confirmation. The code already closes the trust and hostname validation problem.
+
+2. Login.
+Related rules: BR026 confirmed, BR027 supported_hypothesis.
+Status: mixed.
+Files:
+`app\polarbeat\sources\defpackage\cmo.java`
+`app\polarbeat\sources\com\polar\beat\data\BeatPrefs.java:331,333,420,454,573,608,732`
+`app\polarbeat\evidence\02_evidence_chains.md:56-107`
+Chain:
+The SharedPreferences evidence starts in `cmo.java`. The audit report says this class uses `getSharedPreferences("UserData2", 0)`. It also uses `UserData2.ThirdParty`. The stored material includes `username`. It includes `password`. It includes `profile_json`. It includes `address_json`. It includes `current_device_id`. `BeatPrefs.java:331` defines `autoSignPossible(Context context)`. `BeatPrefs.java:333` returns true when username and password are both present. `BeatPrefs.java:420` reads password. `BeatPrefs.java:454` reads username. `BeatPrefs.java:573` writes password. `BeatPrefs.java:608` writes username. `BeatPrefs.java:732` returns ordinary `context.getSharedPreferences(str, 0)`. That means the auto login decision depends on plain local credential presence. This is enough to keep BR026 confirmed. The export side is different. The earlier report saw a public Pictures PNG write path. The final review still said the content was not fully closed in all cases. So BR027 remains supported_hypothesis rather than confirmed.
+Limits:
+No device export file was shown. BR026 does not depend on that missing step. BR027 does, so it stays lower.
+
+3. Health.
+Related rules: BR018, BR025, BR091.
+Status: confirmed.
+Files:
+`app\polarbeat\sources\fi\polar\datalib\data\trainingsession\TrainingSession.java:466,491,611,612,696,710,716`
+`app\polarbeat\sources\fi\polar\datalib\data\trainingsession\exercise\Exercise.java:378,410,418,426,450,458,466,720,725,730,739,744,754,759,764`
+`app\polarbeat\evidence\02_evidence_chains.md:115-185`
+Chain:
+The local data side is visible first. `TrainingSession.java:611` stores training proto bytes. `TrainingSession.java:612` saves the session. `TrainingSession.java:696` saves identifier proto. `TrainingSession.java:710` saves training session proto. `TrainingSession.java:716` saves physical data proto. `Exercise.java:720` saves route proto. `Exercise.java:725` saves RR samples proto. `Exercise.java:730` saves samples proto. `Exercise.java:739` saves statistics proto. `Exercise.java:744` saves swimming samples proto. `Exercise.java:754` saves transition RR samples. `Exercise.java:759` saves transition route. `Exercise.java:764` saves transition samples. This already closes the local database side for BR025 and BR018. The upload side then closes the cloud path. `TrainingSession.java:466` uploads to `/training-sessions/create`. `TrainingSession.java:491` uploads to `/physical-information`. `Exercise.java:378` uploads `/samples`. `Exercise.java:410` uploads `/route`. `Exercise.java:418` uploads `/rrsamples`. `Exercise.java:426` uploads `/swimming-samples`. `Exercise.java:450` uploads `/transition/route`. `Exercise.java:458` uploads `/transition/samples`. `Exercise.java:466` uploads `/transition/rrsamples`. So this is not only local storage. It is a direct first party persistence and upload chain. That is why BR091 stays confirmed here rather than lower.
+Limits:
+The code already closes the endpoint path. A separate packet capture would add detail but is not required to keep the chain confirmed at source level.
+
+4. SDKs.
+Related rules: BR040 confirmed, BR092 supported_hypothesis.
+Status: mixed.
+Files:
+`app\polarbeat\sources\defpackage\bgn.java:538`
+`app\polarbeat\sources\defpackage\bdm.java:61`
+`app\polarbeat\evidence\02_evidence_chains.md:193-233`
+Chain:
+The evidence chain points to third party analytics and attribution logic. `bgn.java:538` writes `advertiser_id` into JSON. `bdm.java:61` reaches `AdvertisingIdClient.getAdvertisingIdInfo` by reflection. That is enough to keep the SDK identifier handling part visible. The audit report also linked Facebook SDK initialization and app event style behavior. So BR040 stays confirmed. The reason BR092 stays lower is not uncertainty about the code artifact. The uncertainty is about the exact network payload. No packet capture was included. So I can say identifier handling and SDK initialization are present. I should not say I saw a specific third party request body with those fields.
+Limits:
+No live third party request was captured. No privacy policy comparison was included.
+
+5. Entry.
+Related rules: BR032, BR059, BR060.
+Status: confirmed.
+Files:
+`app\polarbeat\resources\AndroidManifest.xml:215`
+`app\polarbeat\evidence\02_evidence_chains.md:315-350`
+`app\polarbeat\sources\com\polar\beat\utils\TestUIActivity.java:79,101,113,115,121-128,134,146-148,151-156`
+Chain:
+The custom scheme item is independent and simple. The Manifest exposes `oauth://fi.polar.Twitter_oAuth_Settings`. That is enough for BR032 as an exposed browsable custom scheme. The target SDK context is also clear. The package targets SDK 22. That keeps BR059 confirmed as an old target and exported behavior context item. Then there is the test UI chain. `AndroidManifest.xml:215` declares `TestUIActivity`. `TestUIActivity.java:79` writes `RemoteServer`. `TestUIActivity.java:101` shows the title `TEST UI`. `TestUIActivity.java:113` creates invalid data controls. `TestUIActivity.java:115` adds a reset button. `TestUIActivity.java:121-128` lists Production, Preproduction, Nightly, Symbio, Mobile sandbox, Mopsi Test, and Test sandbox. `TestUIActivity.java:134` resets server configuration. `TestUIActivity.java:146-148` adds sensor update controls. `TestUIActivity.java:151-156` adds exercise start, stop, status, delete, load, and dir controls. This is why BR060 stays confirmed. The environment and base URL switching logic really is still inside the package.
+Limits:
+The original review did not claim any ordinary outside app can definitely launch `TestUIActivity`. I am not changing that boundary.
+
+6. BLE.
+Related rules: BR063 and BR066 confirmed. BR061, BR062, BR064, BR067, BR068, BR069, BR071, BR074, BR075 supported_hypothesis.
+Status: mixed.
+Files:
+`app\polarbeat\sources\com\polar\beat\bluetooth\BluetoothService.java:112,134,135,143,198,200,207,208,233,234,262,263,288-291,320`
+`app\polarbeat\resources\res\xml\server.xml:3,6`
+`app\polarbeat\sources\defpackage\clq.java:18-23,32,76`
+`app\polarbeat\sources\defpackage\clr.java:44,45,46,48,64,65,91`
+`app\polarbeat\evidence\02_evidence_chains.md:235-307`
+Chain:
+`BluetoothService.java:112` starts scan logic. `BluetoothService.java:134-143` handles the BLE prefs file and cached UUID storage. `BluetoothService.java:288-291` reads sensor name, UUID, and Polar device id from prefs. `BluetoothService.java:320` stores MAC address into the sensor device model. So device identity caching is real. The PFTP service values are also real. `server.xml:3` defines `PFTP_SERV`. `server.xml:6` defines `PFTP_MTU`. `BluetoothService.java:198` and `:200` perform remove operations. `BluetoothService.java:207-208` constructs PFTP GET. `BluetoothService.java:233-234` constructs PFTP PUT. `BluetoothService.java:262-263` starts exercise operations. That closes the command and protocol surface side. The GATT server side is also explicit. `clq.java:18-23` defines PFTP server related UUIDs. `clq.java:32` keeps a `Hashtable<String, Hashtable<UUID, PFTPController>>` keyed by device address. `clq.java:76` opens the GATT server. `clr.java:44` handles `onCharacteristicWriteRequest`. `clr.java:45` checks whether the controller table contains the Bluetooth device address. `clr.java:46` selects the controller by characteristic UUID. `clr.java:48` forwards the write bytes into `pFTPController.a(...)`. `clr.java:64-65` creates and stores a controller on connection using the device address. `clr.java:91` broadcasts disconnect with `KEY_DEVICE_MAC_ADDRESS`. This is enough to keep BR063 and BR066 confirmed. The remaining attack claims still need a device. The source does not show a visible application token or signature. That is why BR061, BR067, and related control rules remain supported_hypothesis.
+Limits:
+No successful unauthorized BLE action was reproduced. No replay capture was included. No pairing or bonding bypass proof was included.
+
+7. Boundaries.
+Related rules: BR047, BR021-BR024, BR034, BR035.
+Status: cleared.
+Notes:
+The final review removed the logging finding. The reason was not lack of interest. The reason was the actual code behavior. The relevant logging classes are effectively empty or not providing the claimed leak path. So BR047 should stay out. Provider exposure also did not close. There is no supported direct provider leak chain here. The custom scheme exists, but the source review did not show URI parameters flowing into a sensitive sink. So BR034 and BR035 stay out. Keeping these exclusions visible is important because the app already has several real confirmed findings without stretching the weaker ones.
+

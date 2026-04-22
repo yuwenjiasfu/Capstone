@@ -1,0 +1,90 @@
+1. Health.
+Related rules: `R006` is `confirmed`. `R073`, `R074`, `R077`, `R078`, `R079`, `R080`, `R081`, `R082`, and `R084` stay `supported_hypothesis`.
+Files:
+`app\blehealth+\sources\com\ble_health_plus\ble\BaseBleActor.java`
+`app\blehealth+\sources\com\ble_health_plus\ble\BaseBleActor$mGattCallback$1.java`
+`app\blehealth+\sources\com\ble_health_plus\ble\connection\BleConnectionService.java`
+`app\blehealth+\sources\com\ble_health_plus\db\AppDatabase_Impl.java`
+Chain:
+The original chain starts at `BaseBleActor.connectDevice()`, which uses the Android BLE stack to connect to the target device. Service discovery then reaches `BaseBleActor$mGattCallback$1.onServicesDiscovered(...)`, and `BaseBleActor.discoverServices(...)` enables notification or indication on supported characteristics. When a value changes, `BaseBleActor$mGattCallback$1.onCharacteristicChanged(...)` passes the MAC address, the GATT object, the characteristic, and the raw bytes into `BleConnectionService.onCharacteristicChanged(...)`. From there the service checks `pairedListMacAddress` to decide which device type is involved, then selects the parser path for blood pressure, heart rate, weight, or glucose. The parsed data is turned into `BloodPressureModel`, `HeartRateModel`, `WeightScaleModel`, or `GlucoseModel`, and the service writes those results into Room through the database layer. `AppDatabase_Impl` creates `BloodPressureTBL`, `HeartRateTBL`, `GlucoseTbl`, and `WeightScaleTBL`, and the schema shows the actual measurement values together with `user_id`, `device_mac`, `epoch`, `date_time`, and raw `data`. That is why the health capture and persistence point stays confirmed.
+Limits:
+There is no real BLE device in the evidence set, so the report still cannot say whether the radio payload is plaintext on the air, whether the device performs its own challenge response, or whether an outside app really succeeded in replaying or injecting measurements.
+
+2. Local data.
+Related rules: this section mainly supports `R006`, `R054`, `R059`, and `R060`.
+Files:
+`app\blehealth+\sources\com\ble_health_plus\db\AppDatabase_Impl.java`
+`app\blehealth+\sources\com\ble_health_plus\pref\AppPref.java`
+Chain:
+The local database name is `ble_health_plus`. The schema in `AppDatabase_Impl` shows that health tables and identity tables live together in the same app-private store. `DevicesTBL` carries `device_serial`, `device_model`, `device_manufacture`, `device_name`, `device_mac`, and battery state. `GlucoseTbl`, `HeartRateTBL`, `BloodPressureTBL`, and `WeightScaleTBL` hold the actual health measurements. `ProfileTBL` adds `birthdate`, `email`, `gender`, `height`, `name`, `profile_url`, `user_id`, `weight`, and `subscriptionToken`. `AppPref` uses `context.getSharedPreferences(context.getPackageName(), 0)`, and the key set includes values such as `FCM_TOKEN`, `USER_DATA`, `PRIMARY_ID`, and backup timestamps. The original report used this combination to show that identity, health records, and device identifiers are stored in the same local app context.
+Limits:
+There is still no runtime database dump or extracted preference file, so the report should not claim a live device sample was read. The point here is the schema and storage design, not a proven extraction.
+
+3. Backup.
+Related rules: `R051`, `R054`, `R057`, `R059`, and `R060`.
+Status: `supported_hypothesis`.
+Files:
+`app\blehealth+\sources\com\ble_health_plus\ui\backup\BackUpFragment.java`
+`app\blehealth+\sources\com\ble_health_plus\utils\AESCipher.java`
+`app\blehealth+\sources\com\ble_health_plus\db\AppDatabase.java`
+Chain:
+`BackUpFragment` requests Google Drive scope `https://www.googleapis.com/auth/drive.file` and builds a Drive client through `GoogleAccountCredential.usingOAuth2(...)`. The backup path checkpoints the Room database, resolves the real DB file with `base.getDatabasePath(AppDatabase.DATABASE_NAME).getAbsolutePath()`, and passes that file into `AESCipher.INSTANCE.encrypt(...)`. The encrypted output is written to `externalCacheDir/ble_health_backup.bkup` and uploaded to Drive as `application/octet-stream`. The same code base also has a restore path: download the file into memory, write `externalCacheDir/ble_health_restore.bkup`, decrypt it, produce `externalCacheDir/ble_health_restore`, and then reopen that restored database through `createFromFile(...)`.
+The encryption details are the part that made the original report cautious but still concerned. `AESCipher.IV_STRING = "BlupixelHealthPl"`. String encryption uses fixed-IV `AES/CBC/PKCS5Padding`. File encryption uses the same string as key material and `Cipher.getInstance("AES")`. I did not see a per-user key, random IV for the file path, KDF, salt, or authentication tag. That is enough to keep the weak full-backup protection hypothesis.
+Limits:
+There is no real backup file, no real Drive upload sample, and no real decrypt test result in the materials I used. So this section should not be written as a completed extraction.
+
+4. WebView.
+Related rules: `R033` and `R034` are `confirmed`. `R030` and `R035` are `supported_hypothesis`.
+Files:
+`app\blehealth+\sources\com\ble_health_plus\ui\report\ShareReportFragment.java`
+`app\blehealth+\sources\com\ble_health_plus\model\ReportModel.java`
+`app\blehealth+\sources\com\ble_health_plus\model\ReadingData.java`
+`app\blehealth+\resources\com.ble_health_plus.apk\assets\report.html`
+Chain:
+`ShareReportFragment` reads local health values and profile data, then constructs `ReportModel`. The model includes `name`, `email`, `age`, `gender`, `profileUrl`, `reportDate`, `deviceType`, `readingData`, `listOfXValue`, `listOfYValue`, `listOfForBP`, `userSetting`, and `dateRange`. The WebView is configured with JavaScript, automatic window opening, file access, DOM storage, and a JavaScript interface named `Android`. The page source is local, `file:///android_asset/report.html`, but the native side still injects the full report model by calling `evaluateJavascript("javascript:loadData('" + new Gson().toJson(reportModel) + "')", null)`. Inside `report.html`, `loadData(data)` parses the JSON and fills the DOM with name, email, age, gender, avatar, report date, units, measurement items, and chart arrays. That is the direct Java to JavaScript boundary that supports `R033` and `R034`.
+The same HTML file also loads remote scripts from `ajax.googleapis.com`, `code.highcharts.com`, and `rawgit.com`. The only visible `@JavascriptInterface` method just calls `stopAnimation()`, so I am not treating this as a confirmed privileged bridge exploit. The right way to phrase it is that the report data definitely enters the JS context, and the remote script exposure keeps the cross-boundary read or forwarding scenario as a strong hypothesis.
+Limits:
+There is no DOM hook, no network capture, and no runtime proof that one of the remote scripts actually touched the report JSON.
+
+5. Components.
+Related rules: `R017`, `R018`, `R019`, and `R020`.
+Status: `supported_hypothesis`.
+Files:
+`app\blehealth+\resources\com.ble_health_plus.apk\AndroidManifest.xml:60-94`
+`app\blehealth+\sources\com\ble_health_plus\ble\scan\BleScanService.java`
+`app\blehealth+\sources\com\ble_health_plus\receiver\ReminderReceiver.java:43-72`
+Chain:
+The Manifest shows both `BleConnectionService` and `BleScanService` as exported and without a custom permission. `BleScanService.onStartCommand(...)` does not validate the caller before moving into `startScan()`. Scan results later reach `parseBLEFrame(...)`, which sends ordinary broadcasts for `ScanEvent.DEVICE_FOUND` or `ScanEvent.DEVICE_UPDATE` and includes extras such as the MAC address, the `BluetoothDevice`, and parsed device type. That is the main reason the original report kept the BLE component-hardening rules active.
+The same original report also kept `ReminderReceiver` in the component discussion. `ReminderReceiver` is an exported broadcast receiver. Its `onReceive(...)` path calls internal reminder handling and then re-broadcasts the reminder action again. The report treated that as a real trust boundary, but it still stopped short of confirmed exploitation because there was no external sender PoC and no runtime state-change proof.
+Limits:
+The present evidence is enough to show exposed entry points and interesting actions. It is not enough to say another app definitely extracted data or changed reminder state on a real device.
+
+6. Network and logs.
+Related rules: `R050` is `supported_hypothesis`. `R021-R024`, `R049`, `R053`, and `R066` remain out.
+Files:
+`app\blehealth+\sources\com\ble_health_plus\network\ApiController.java`
+`app\blehealth+\sources\com\ble_health_plus\BuildConfig.java`
+`app\blehealth+\sources\com\ble_health_plus\utils\AppLog.java`
+Chain:
+`BuildConfig.BASE_URL` points to `https://www.blehealthplus.com/api/auth/`, and `ApiService` covers login, registration, password change, OTP, profile, image upload, subscription save and update, and backup time update. `ApiController.getHttpClient()` adds `HttpLoggingInterceptor` and sets it to `Level.BODY`. In a release build that is enough to keep the logging rule alive because the client can see full requests and responses that contain credentials or profile data. The report also drew a clear line around `AppLog`: the methods are empty or effectively no-ops, so `AppLog.INSTANCE.e(...)` should not be reused as proof of actual leakage.
+Limits:
+There is still no logcat and no file log sample. That is why the status stays `supported_hypothesis` and not confirmed. The same lack of evidence is also why the report did not convert `usesCleartextTraffic=true` into a confirmed sensitive HTTP transport finding.
+
+7. SDKs.
+Related rules: `R002`, `R041`, and `R065`.
+Status: `supported_hypothesis`.
+Files:
+`app\blehealth+\resources\com.ble_health_plus.apk\AndroidManifest.xml:171-223`
+`app\blehealth+\sources\com\ble_health_plus\ui\launch\LaunchActivity.java`
+Chain:
+The Manifest registers Firebase Messaging, Crashlytics, Analytics, Installations, DataTransport, and `FirebaseInitProvider`. `LaunchActivity.onResume()` calls `FirebaseMessaging.getInstance().getToken()` and stores the resulting FCM token through `AppPref`. That makes the third-party telemetry and messaging surface concrete. The original report still kept the status below confirmed because there is no packet capture tying health records or report values to Firebase traffic.
+Limits:
+No startup traffic, no consent-path experiment, and no recipient-side evidence exist in the material I used.
+
+8. Boundaries.
+Main points:
+`R021-R024` do not close because the first-party code does not show a custom trust-all TLS implementation.
+`R025-R028` do not close because the Manifest does not show the kind of browsable deep link surface those rules require.
+`R085-R096` do not close because no Facebook SDK, wireless profiling SDK, or media exfiltration chain was found.
+The whole file set has no packet capture, no runtime storage dump, and no real BLE device trace, so every statement that depends on those materials stays below confirmed.
+

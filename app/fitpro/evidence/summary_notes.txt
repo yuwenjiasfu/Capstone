@@ -1,0 +1,71 @@
+Fitpro.
+
+1. The cleartext transport issue is real here.
+Rules: BR006 and BR013.
+Status: confirmed.
+This one should stay confirmed. It is not only a weak manifest flag. It is also used by first-party code. `app\fitpro\resources\AndroidManifest.xml:154` sets `android:usesCleartextTraffic="true"`. `app\fitpro\resources\res\xml\network_security_config.xml:3` and `:13` both allow cleartext traffic. `app\fitpro\sources\xfkj\fitpro\websocket\JWebSocketClientService.java:42` builds `ws://hiapi.jusonsmart.com:7780/websocket/%1$s/%2$s`. The first path value comes from `DBHelper.getUserId()`. The second path value comes from `DBHelper.getUserToken().replaceAll(...)`. So the account identifier and token-derived value are part of a plaintext WebSocket design. That is enough to keep BR006 and BR013 confirmed. I am not stretching this into a claim that every business API uses plaintext. I am also not stretching this into a claim that HTTPS itself is broken.
+
+2. BR095 still should not be upgraded.
+Rule: BR095.
+Status: highly suspected only.
+The original review was careful on this point and I am keeping that. The app clearly allows cleartext and clearly uses a plaintext WebSocket. But I did not see a first-party permissive TrustManager. I did not see a first-party HostnameVerifier that always returns true. I did not see a first-party HTTPS downgrade path from TLS failure to HTTP. So the stronger "weak HTTPS validation" style claim still does not cross the line. The confirmed part is the plaintext WebSocket and the global cleartext-allowed posture. The rest stays below confirmed.
+
+3. There is a hardcoded bearer token and other embedded service keys.
+Rule: BR016.
+Status: confirmed.
+`app\fitpro\sources\xfkj\fitpro\utils\Constant.java:70` hardcodes `Bearer 6fcb7f58475b4e5aad8f0f1cadce235e`. `app\fitpro\sources\xfkj\fitpro\db\DBHelper.java:304-323` is the token lookup path. The original audit already noted that the app can fall back to the hardcoded token. `app\fitpro\sources\xfkj\fitpro\api\HttpHelper.java:683-692` uses `Constant.TOKEN` in `updateDeviceInfo()`. That is enough to keep the hardcoded credential point confirmed. There is more extractable key material in resources too. `app\fitpro\resources\res\values\strings.xml:1612-1613` contains QQ app identifiers. `app\fitpro\resources\res\values\strings.xml:2295-2296` contains Sina identifiers and secret material. `app\fitpro\resources\res\values\strings.xml:2391` contains Tencent auth material. `app\fitpro\resources\res\values\strings.xml:2659` contains Umeng key material. `app\fitpro\resources\res\values\strings.xml:2783` contains the WeChat app id. The careful limit stays the same. I am confirming extractable embedded credentials and service keys. I am not claiming server takeover. I am not claiming every app id has the same impact.
+
+4. Exported debug, health, upload, and device-command components are a real surface.
+Rules: BR029, BR030, and BR059.
+Status: confirmed.
+This is not only a manifest observation. The sensitive local actions are also visible in code. `app\fitpro\resources\AndroidManifest.xml:219-221` exposes `JWebSocketClientService`. `app\fitpro\resources\AndroidManifest.xml:235-236` exposes `BluetoothCommandActivity`. `app\fitpro\resources\AndroidManifest.xml:244-245` exposes `DebugFunctionActivity`. `app\fitpro\resources\AndroidManifest.xml:259-260` exposes `ECGHistoryActivity`. `app\fitpro\resources\AndroidManifest.xml:292-293` exposes `PayQrcodeActivity`. `app\fitpro\resources\AndroidManifest.xml:353-354` exposes `HealthReportActivity`. `app\fitpro\resources\AndroidManifest.xml:396-397` exposes `ApiDebugActivity`. `app\fitpro\resources\AndroidManifest.xml:607-609` exposes `UploadDataService`. `app\fitpro\sources\xfkj\fitpro\activity\debug\DebugFunctionActivity.java:73-75` sets `Constant.isDeubg = true`. The same file at `:224` opens `ApiDebugActivity`. The same file at `:228` opens `BluetoothCommandActivity`. `app\fitpro\sources\xfkj\fitpro\activity\debug\BluetoothCommandActivity.java:33` reads `weather.json`. The same file at `:83-99` pushes weather bytes into `commandPoolWrite(SendData.getWeatherInfoValue(...))`. `app\fitpro\sources\xfkj\fitpro\activity\pay\PayQrcodeActivity.java:85` reads the intent extra `PAY_EXTRA`. The same file at `:142-144` sends QR content into `SendData.getPayValue(...)`. `app\fitpro\sources\xfkj\fitpro\activity\ecg\ECGHistoryActivity.java:31-35` reads ECG history with `DBHelper.queryECGDatas()`. `app\fitpro\sources\xfkj\fitpro\service\UploadDataService.java:35-42` starts uploading as soon as the service is created and user info exists. That is enough to say exported components reach meaningful local behavior. So BR029, BR030, and BR059 should stay confirmed.
+
+5. The BLE command abuse angle still stays below confirmed.
+Rule: BR074.
+Status: highly suspected.
+The reason is that the static chain is strong, but the final exploitation step still needs runtime proof. The app can write weather bytes. The app can write payment QR bytes. The app can trigger debug paths. But the real outcome still depends on live BLE connection state and runtime conditions. So I am keeping the stronger BLE-control abuse point below confirmed. That matches the original material better.
+
+6. Local storage protection is weak in both the database and preference layers.
+Rules: BR025 and BR026.
+Status: confirmed.
+`app\fitpro\sources\xfkj\fitpro\db\DBModule.java:32` sets `ENCRYPTED = false`. `app\fitpro\sources\xfkj\fitpro\utils\PathUtils.java:30` defines the root under `Android/data/<package>`. The same file at `:57` builds the DB directory. The same file at `:101-102` points to external storage plus that app directory. The original report already mapped the schema to health, identity, token, password, device, and location fields. That is enough to keep BR025 confirmed. The preference side is also not protected. The original notes already showed ordinary SharedPreferences storing Bluetooth address, body values, goals, H5 URL, and other state. So BR026 also stays confirmed. I am not exaggerating this into "any app can read everything on every modern Android version". The point is weaker storage design, not universal cross-app access on all devices.
+
+7. The external app-specific storage point should stay confirmed, but with the same careful wording as before.
+Rule: BR027.
+Status: confirmed.
+The files are not described as being in a fully public root folder. They are described as being in external app-specific paths. That distinction matters and I am keeping it. `app\fitpro\sources\xfkj\fitpro\utils\PathUtils.java:30` and `:101-102` show the external app-specific base. The DB sits under that area. The WebSocket voice AMR files also go to an external app music path. The original review already said not to overstate this as universal public storage exposure. I agree with that limit. But the combination of unencrypted DB, exported functions, log files, and app-specific external placement is still enough to keep BR027 confirmed.
+
+8. Backup protection is also weak.
+Rule: BR028.
+Status: confirmed.
+`app\fitpro\resources\AndroidManifest.xml` enables backup according to the original audit. `app\fitpro\resources\res\xml\backup_rules.xml:2` is just `<full-backup-content/>`. `app\fitpro\resources\res\xml\data_extraction_rules.xml:3` allows `<cloud-backup/>`. The key point is that I did not see exclusions for sensitive DB or session material. So the backup exposure finding still stays confirmed. I am not claiming that cloud backup definitely happened on a real device. I am confirming that the shipped backup policy does not carve out the sensitive material.
+
+9. Sensitive logs are clearly present in first-party paths.
+Rule: BR047.
+Status: confirmed.
+`app\fitpro\sources\xfkj\fitpro\fragment\MineFragment.java:281-282` logs token, Bluetooth address, and BLE state together. `app\fitpro\sources\xfkj\fitpro\websocket\JWebSocketClientService.java:45` logs inbound WebSocket messages. `app\fitpro\sources\xfkj\fitpro\service\UploadDataService.java:37-41` logs upload start plus device IDs. `app\fitpro\sources\xfkj\fitpro\service\BaseLeService.java:498` writes raw BLE bytes to local logs. `app\fitpro\sources\xfkj\fitpro\bluetooth\revData\BaseReceiveData.java:876-879` writes parsed step logs. The same file at `:1466` stores sleep hex logs. The same file at `:1436` and `:1648-1689` logs parsed movement values. This is more than a single noisy debug statement. It is a repeated logging pattern across token, device identifier, raw BLE bytes, and health-related values. So BR047 should stay confirmed. I am not calling BR080 confirmed because I still do not have runtime logcat output.
+
+10. Device information definitely reaches an external sink.
+Rule: BR015.
+Status: confirmed.
+`app\fitpro\sources\xfkj\fitpro\api\CommonService.java:322` defines `updateDeviceInfo(...)`. The fields include `mac`, `deviceModel`, `deviceVersion`, `appVersion`, `osVersion`, `osType`, `osLang`, `phoneModel`, and `userId`. `app\fitpro\sources\xfkj\fitpro\api\HttpHelper.java:683-692` builds that call from local device data. This is enough to keep BR015 confirmed. It is not just a possible field list. It is a direct first-party API path.
+
+11. Health uploads are strongly supported, but I am still not overstating runtime transmission.
+Rules: BR091, BR094, and BR097.
+Status: highly suspected.
+`app\fitpro\sources\xfkj\fitpro\bluetooth\revData\BaseReceiveData.java:1798-1799` saves a measurement and immediately calls `uploadHeartBlood(measureDetailsModel)`. `app\fitpro\sources\xfkj\fitpro\api\HttpHelper.java:456-462` turns that object into JSON upload content. `app\fitpro\sources\xfkj\fitpro\api\CommonService.java:357` defines the `uploadHeartBlood` API field sink. The same service at `:365`, `:369`, and `:372` handles sleep, steps, and temperature. `app\fitpro\sources\xfkj\fitpro\service\UploadDataService.java:58-164` also uploads stored step, sleep, and heart-blood history in sequence. That static chain is very strong. But I still do not have runtime packet evidence. So I am keeping the cloud receipt claim below confirmed. The code path exists. The exact observed traffic and real server handling are still not demonstrated.
+
+12. The BLE application-layer protection gap is still only a supported finding.
+Rules: BR061, BR062, BR063, BR065, BR067, BR068, BR073, and BR075.
+Status: highly suspected.
+`app\fitpro\sources\xfkj\fitpro\bluetooth\SendData.java:314` shows the generic protocol builder. I do not see HMAC there. I do not see a signature there. I do not see a nonce or session proof there. `app\fitpro\sources\xfkj\fitpro\bluetooth\SendData.java:294` builds pairing. The same file at `:123-125` sets user information. The same file at `:111-112` sets the step target. The same file at `:242-243` builds weather payloads. The same file at `:405-406` builds pay payloads. `app\fitpro\sources\xfkj\fitpro\service\BaseLeService.java:162` starts service discovery handling. The same file at `:132` and `:737` stores the Bluetooth address. `app\fitpro\sources\xfkj\fitpro\bluetooth\revData\BaseReceiveData.java:1497-1501` turns BLE values into saved sleep data. The same file at `:1798-1799` turns BLE values into saved and uploaded measurement data. All of that supports the usual BLE application-layer concern. But without a real device or BLE traces, I am not claiming the peripheral has no extra checks. So these rules stay highly suspected, not confirmed.
+
+13. Third-party advertising and telemetry risk still stays below confirmed.
+Rules: BR040, BR041, BR052, and BR092.
+Status: highly suspected.
+The manifest and resources show multiple advertising or analytics related pieces. The resources also expose ad and social service identifiers. But I still do not have runtime traffic proving what third-party recipients actually received. So this part should stay below confirmed, just as the original report kept it.
+
+14. A few tempting rules are still not supported.
+Rules: BR007, BR009, BR010, BR011, BR021 to BR024, and BR032 to BR035.
+Status: still too weak.
+I did not see user or debug trust anchors in the network config. I did not see a first-party "trust all certificates" manager. I did not see a first-party "always true" hostname verifier. I did not see a confirmed sensitive exported provider chain. I did not see a first-party deep link chain that reaches sensitive logic. So I am leaving those out of the positive findings.

@@ -1,0 +1,70 @@
+Bupa.
+
+1. External intent data can reach the local video consultation state machine.
+Rules: BR029 and BR059.
+Status: confirmed.
+This is still the strongest finding in the Bupa files. The entry point is not just exported in the manifest. The forwarding code is also visible. The local business branch is also visible. `app\bupa\resources\com.bupa.digitalprimarycare.apk\AndroidManifest.xml:132-162` exposes `RNBootSplashActivity`. The same manifest at `:163-234` exposes `MainActivity`. `app\bupa\sources\com\zoontek\rnbootsplash\RNBootSplashActivity.java:14-22` copies extras, data, action, and type into the next intent. `app\bupa\sources\com\babylon\cyrus\MainActivity.java:90` reads the launch type. The same file at `:94-103` handles `ACCEPTED`. The same file at `:106-109` handles `INCOMING_CALL`. The same file at `:113-119` handles `STOPPED`. The same file at `:149` calls `setLaunchType(intent)` from `onCreate()`. The same file at `:158-159` calls `setLaunchType(intent)` again from `onNewIntent()`. The same file at `:178` calls `RNBranchModule.initSession(getIntent().getData(), this)`. This is enough to say outside intent data can affect the local consultation state and service flow. It is not enough to say a real backend appointment was changed. It is not enough to say authentication was bypassed.
+
+2. The service layer closes the same consultation chain.
+Rules: still BR029 and BR059.
+Status: confirmed.
+`app\bupa\sources\com\babylon\cyrus\videoconsultationmodule\RingerService.java:26-29` defines `APPOINTMENT_ID`, `CLINICIAN_NAME`, and `LAUNCH_TYPE`. The same file at `:53-58` creates the accept pending intent into `MainActivity`. The same file at `:66-71` creates the incoming-call pending intent. The same file at `:157-170` starts the notification flow and records appointment-received metrics. The same file at `:174-185` handles stop and accepted or declined events. `app\bupa\sources\com\babylon\cyrus\videoconsultationmodule\OngoingCallService.java:32-35` carries `CLINICIAN_NAME`. The same file at `:49-50` puts the clinician name into the foreground notification text. So the effect is not only a branch label inside an activity. It also reaches local notification and service behavior. That is why I still think this item stays confirmed.
+
+3. Redux persistence uses a recoverable secret from the packaged bundle.
+Rules: BR026 and BR016.
+Status: confirmed at code level.
+The original review was very careful here, and I am keeping that same limit. `app\bupa\resources\com.bupa.digitalprimarycare.apk\assets\index.android.bundle:734` shows `redux-persist-transform-encrypt`. The same bundle shows a whitelist that includes `session`, `monitor`, `resources`, and `shared`. The same bundle shows fields such as `authToken`, `authTokenExpires`, `idToken`, and `refreshToken`. The same bundle shows that the encrypt transform uses `secretKey: getKey()`. The key generation is still inside the packaged bundle. So the protection is recoverable from the APK. That is enough for a code-level weak storage design finding. It is not enough to say a real device file was extracted. It is not enough to say a real token remained valid. It is not enough to say the app actually wrote every auth field into a storage file on a real device session.
+
+4. The cleartext network policy is weak, but the production HTTP claim still stays below confirmed.
+Rules: BR006 confirmed, BR013 not supported.
+Status: mixed, same as the original files.
+`app\bupa\resources\com.bupa.digitalprimarycare.apk\AndroidManifest.xml:125` sets `android:usesCleartextTraffic="true"`. The same manifest at `:121` sets `allowBackup="false"`. The same manifest at `:129` sets `requestLegacyExternalStorage="true"`. The original files also say no `network_security_config.xml` was found. That is enough to confirm the cleartext-allowed policy. But the same evidence chain also shows that visible first-party business endpoints are mostly HTTPS. The bundle points to HTTPS hosts for services, consumer API, GraphQL, platform graph, and telemetry collection. So the mentor review was right to keep BR013 below confirmed. I do not think it is safe to rewrite this as confirmed plaintext health-data transport.
+
+5. Embedded service keys and secret-like identifiers are present in the package.
+Rule: BR016.
+Status: confirmed.
+This one should stay simple. The app package contains extractable key material. `app\bupa\resources\com.bupa.digitalprimarycare.apk\assets\appcenter-config.json:2` contains the AppCenter secret. `app\bupa\resources\res\values\strings.xml:175-176` contains Braze or Appboy key material. The same strings file at `:276` and `:278` contains Google key material. `app\bupa\resources\com.bupa.digitalprimarycare.apk\AndroidManifest.xml:280-284` contains Branch key material. `app\bupa\resources\com.bupa.digitalprimarycare.apk\assets\index.android.bundle` also exposes Sentry DSN and liveChat-style key material. The first-party code base also contains a default API key path according to the original review. The careful boundary is the same as before. The confirmed part is extractability from the APK. I am not claiming backend compromise. I am not claiming that every key is high impact.
+
+6. Startup initializes several SDKs, and identifier access capability is visible.
+Rules: BR014 and BR040.
+Status: confirmed.
+`app\bupa\sources\com\babylon\cyrus\MainApplication.java:113-121` initializes Braze or Appboy, AppCenter, and Branch. `app\bupa\resources\com.bupa.digitalprimarycare.apk\assets\index.android.bundle:7` shows Sentry, push, native events, and telemetry-style startup work. `app\bupa\resources\com.bupa.digitalprimarycare.apk\AndroidManifest.xml:67` declares `AD_ID`. The same manifest at `:98` declares `READ_PHONE_STATE`. The original files also note AppsFlyer and Branch code paths with Advertising ID, telephony, and settings access capability. `app\bupa\resources\com.bupa.digitalprimarycare.apk\assets\index.android.bundle:859` shows authorization-parameter construction with device-derived and visitor-style values. That is enough to keep startup SDK presence and identifier access capability confirmed. It is still not enough to say specific third-party recipients received data on a real run.
+
+7. Third-party telemetry and identifier sending still stay below confirmed.
+Rules: BR041 and BR092.
+Status: highly suspicious.
+The static side is still strong. The app starts several SDKs. It has ad or identifier permissions. It builds device-related parameters. It has multiple third-party SDK namespaces. But the original mentor review was right on the missing piece. There is still no packet capture. There is still no consent-timing check. There is still no runtime payload sample. So I still think this belongs under strong suspicion only.
+
+8. The deep link and custom-scheme surface is real.
+Rule: BR032.
+Status: confirmed.
+The manifest clearly exposes browsable and custom-scheme entry points. `app\bupa\resources\com.bupa.digitalprimarycare.apk\AndroidManifest.xml:132-162` includes `bupabluahealth`. The same manifest also includes the account host and web-style path. `MainActivity` also has multiple callback filters. That is enough to keep the entry surface itself confirmed. This point does not need a stronger claim than that.
+
+9. Deeper deep-link misuse still stays below confirmed.
+Rules: BR033, BR034, BR035, BR084.
+Status: BR033 and BR034 highly suspicious.
+Status: BR035 and BR084 not testable.
+The original review handled this carefully. The app definitely has a surface. What is still missing is the real hijack or bypass proof. There is no asset-links verification result. There is no dynamic scheme-conflict test. There is no route-bypass proof. There is no auth-bypass proof. So I do not think it is safe to push these past suspicion.
+
+10. Sensitive health, identity, insurance, prescription, and mental-health data types are clearly present.
+Rules: BR018, BR019, BR020.
+Status: confirmed.
+The original files specifically call out patient, consultation, prescription, referral, pharmacy, medical history, insurance member ID, health report, and device-sync style content. They also specifically call out GAD-7, PHQ-9, anxiety, and depression content. That is enough to confirm the app handles those data categories. This point does not depend on traffic. It depends on visible app data model and UI surface.
+
+11. Cloud-side handling of those sensitive data types is still only strongly suggested.
+Rules: BR091, BR094, BR096.
+Status: highly suspicious.
+The bundle points to first-party services and GraphQL endpoints. The app clearly has the corresponding sensitive data surface. So the static picture supports the idea of cloud processing. But the original files also say there is no packet capture and no payload sample. That is why this still stays below confirmed.
+
+12. The provider and file-sharing configuration deserves attention, but it should not be overstated.
+Rule: BR027.
+Status: preliminary suspicion.
+`app\bupa\resources\com.bupa.digitalprimarycare.apk\AndroidManifest.xml:300-308` shows one FileProvider. The same manifest at `:338-345` shows another provider using the same authority. The original evidence also notes broad provider path XML. At the same time, both providers are non-exported. That is the key reason I am keeping this weak. I do not think it should be rewritten as a confirmed provider leak.
+
+13. BLE stays weak in the current Bupa evidence set.
+Rule: BR044.
+Status: preliminary suspicion.
+The manifest includes Bluetooth permissions. But the original evidence chain says the first-party namespace does not show BLE scan, GATT, characteristic parsing, or upload code. So the current source set is not enough to build a full BLE vulnerability claim. I would only keep it as a weak follow-up point for runtime checking.
+
+14. Some things were explicitly cleared in the original review, and I think those clearances should stay visible.
+BR009, BR010, and BR011 were not supported in the first-party code. BR013 was not supported as confirmed sensitive HTTP endpoint use. BR021 to BR024 were not supported as provider leaks. BR047 was not supported as a first-party sensitive log leak. BLE GATT and BLE-to-cloud paths were not supported in first-party code. That restraint was one of the stronger parts of the original Bupa review.

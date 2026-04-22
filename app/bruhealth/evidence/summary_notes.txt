@@ -1,0 +1,35 @@
+BruHealth.
+
+1. TLS.
+Rules: `BR009`, `BR010`, and `BR012`.
+Status: `confirmed`.
+The strongest confirmed result still comes from the transport code, but the two TLS paths need to stay separated exactly like the original source review did. The `StepsUploader` path is the hard failure: `SSLSocketClient` contains empty `checkServerTrusted(...)` implementations and a `HostnameVerifier` that returns true, `OkHttpUtils.setSafe(...)` installs both of them, and `StepsUploader` uses that client to upload step and calorie data together with `wlapp-token` and `device-id`. The main `ApiClient` path is weaker but still real: `EvydHostnameVerifier` returns true for the configured base host branch, so hostname checking is relaxed there as well. The report should keep both chains, but it should not describe them as the same thing.
+
+2. Logs.
+Rule: `BR047`.
+Status: `confirmed` at the sink level.
+The original mentor review narrowed this point in a way that I want to preserve. The confirmed part is that sensitive values enter log sinks in code. Health and route upload parameters, request headers, authentication context, and location data all reach logging paths. The report should not say that product file logging was definitely enabled in a real production session, because `WorkInitialization` and `EvydEnvWrapper.isProd()` make that runtime branch less certain than the first draft claimed. So the safe version is: sensitive data definitely reaches logging code, but product file output and runtime exposure still need verification.
+
+3. Local identity.
+Rules: `BR025` and `BR026`.
+Status: `confirmed`.
+The app keeps identity records in Room and keeps token or cookie state in ordinary SharedPreferences. `AppDatabase_Impl` creates `user_info` with fields such as `user_id`, `member_id`, `id_no`, `id_type`, `phone_no`, `region_code`, and `last_login_time`, and `DBHelper` uses plain `Room.databaseBuilder(...)` without an application-layer encryption wrapper. Login state is stored through `SPUtils` under `Constants.USER_TOKEN`, and `PersistentCookieStore` writes serialized cookies into `CookiePrefsFile`. That is enough to keep local identity and token storage confirmed, while still keeping the threat model honest: this is not the same as saying any ordinary third-party app can read those files directly.
+
+4. Deep link.
+Rules: `BR032` is `confirmed`. `BR034` and `BR035` are `supported_hypothesis`.
+Status: mixed.
+`DeepLinkActivity` is exported and browsable for the custom `bruhealth` scheme, and it hands control to `SchemeOpenManager`, which then routes parameters into internal handlers, ARouter, or Web routes. That is enough to keep the deep link entry surface confirmed. The stronger exploit-style part still stays below confirmed because the code also has login-state gating and the current evidence set does not prove a specific sensitive action can be triggered from outside without the expected checks. The original files were also careful here because the same routing system can reach WebView or bridge-related handlers, but the exact end-to-end misuse path was not reproduced.
+
+5. Health.
+Rules: `BR018` and `BR019` are `confirmed`. `BR091`, `BR094`, `BR095`, and `BR097` stay `supported_hypothesis`.
+Status: mixed.
+The app clearly handles health data and medication-related context. The Manifest requests Health Connect permissions for steps, calories, heart rate, weight, sleep, speed, exercise, and distance. Flutter config and native code also show medical reminder, warfarin, PHR, and health card routes. Native models hold activity, sleep, location, and blood glucose data, and health APIs upload route reports and screenshots. That makes the health and medication presence confirmed. The upload and cloud-risk rules stay below confirmed because there is still no runtime packet capture, no server-side confirmation, and no proof that the full static field set was really transmitted in the observed environment.
+
+6. BLE.
+Rules: `BR061-BR068` stay `supported_hypothesis`. `BR069-BR070` and `BR074-BR075` stay `not_testable`.
+Status: below confirmed.
+The app does have a real blood glucose BLE path. The Manifest requests BLE permissions, the glucometer module and native utilities exist, and the original evidence chain traces GATT scanning, notify or write behavior, and Flutter callbacks for glucose data. That is enough to keep BLE risk discussion alive. It is not enough to say unauthorized access, replay, or application-layer control failure was confirmed, because there was no real device test, no BLE sniffer capture, and no successful attack demonstration.
+
+7. Boundaries.
+Main points: some of the highest-risk-looking items are independent engineering findings, not rule conclusions.
+The original source review was right to keep a few things outside the rule list even though they matter. `CommonWebView` auto-grants geolocation to any origin. The H5 or Flutter bridge can return app token and user info if it is ever exposed to untrusted content. Production builds also contain an exported Compose preview activity and a typoed Bluetooth permission string. Those are real engineering concerns, but they should not be disguised as confirmed catalog rules. The same review also correctly refused to turn third-party sharing, product file logging, token leakage from WebView, or confirmed BLE exploitation into facts without runtime evidence.

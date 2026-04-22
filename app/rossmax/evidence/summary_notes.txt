@@ -1,0 +1,45 @@
+Rossmax.
+
+1. Inputs.
+Rules: `R005`.
+Status: `confirmed`.
+The app clearly has real credential-entry paths. The original report points to Google sign-in, Facebook login, email login or registration, and phone-based login inside `LoginPage`. I am keeping this at the same narrow level as the original material: it confirms the presence of account credential input and authentication flow, but it does not claim those credentials were leaked.
+
+2. Health.
+Rules: `R006`.
+Status: `confirmed`.
+This app clearly processes health measurements, and the original evidence for that point is strong. BLE callbacks in `VUBleManager` receive blood pressure, glucose, pulse oximetry, temperature, and weight objects. One-party models such as `Vital`, `BpData`, `GlucoseData`, `Spo2Data`, and `FireWeight` hold the measurement semantics, and the delegate path converts BLE measurement objects into those models. That is why health-data handling stays confirmed. The evidence is a real measurement model chain, not a guess from marketing text.
+
+3. Cloud.
+Rules: `R007`, `R052`, `R059`, and `R060`.
+Status: `supported_hypothesis`.
+There is a real static sink from the health models into Firestore and Cloud Functions. `DataManager.insertVitalData(...)` passes `Vital` objects to `FirebaseVitalStore.insertVitalData(...)`, and the store writes into `users/{uid}/measurements/`. The same code base also uses Cloud Functions style endpoints and caring-related measurement queries. The reason these rules stay below confirmed is that the current evidence set still has no runtime packet capture, no Firestore console proof, and no real payload sample. So the right conclusion is that the cloud path is strongly supported by code, not fully proven by runtime evidence.
+
+4. Deep link.
+Rules: `R026` and `R028`.
+Status: `supported_hypothesis`.
+The App Link host is fixed to `https://r.rossmax.care`, so this is not an arbitrary-host problem. The concern in the original material is narrower and should stay narrower: the path is not restricted, `SplashActivity` forwards inbound data into `MainAdvActivity`, and `DeepLinkUtil.resolveDeepLink()` reads the invitation `id` from the incoming URI. That flow can reach caring or follow logic. The same code also has non-anonymous-user checks, expiration checks, `used` checks, and an explicit follow confirmation dialog. Because of those guards, the report should keep this as a supported hypothesis rather than an overclaimed confirmed abuse path.
+
+5. WebView.
+Rules: `R029` and `R031`.
+Status: `supported_hypothesis`.
+The WebView evidence is specific enough to keep, but not specific enough to upgrade. `WebFragment` enables JavaScript and automatic window opening for remote content. `SetRegionActivity` also enables JavaScript, uses `onJsPrompt(...)`, and trusts the `message == "region"` path without validating the `url` origin before later writing `regionShortCode` into Firestore after user confirmation. That is enough to keep a WebView and origin-validation concern on the list. It is still not a confirmed exploit because there is no runtime proof that a malicious page can control that WebView in the way the attack would need.
+
+6. Logs.
+Rule: `R050`.
+Status: `supported_hypothesis`.
+The original files kept this below confirmed for the right reason. Login code logs Google and Firebase account fields. The API client uses Retrofit logging at `BASIC`, and some Cloud Functions URLs carry `access_token` in the query string. `ViTree` also shows that `Timber.i(...)` level messages can reach the logging tree. That is enough to make the log-risk hypothesis serious. It is not enough to say the sensitive values definitely appeared in real logcat output because there is no runtime log sample.
+
+7. SDKs.
+Rules: `R041`, `R062`, `R065`, and `R071`.
+Status: `supported_hypothesis`.
+Facebook SDK auto-init and Firebase Analytics both appear in the package. `FireAnalytics` logs health context, including `vital_unit` style data about blood pressure, blood glucose, weight, and temperature categories or units. The original report kept the third-party tracking and analytics rules below confirmed because it had no startup traffic, no consent-path packet capture, and no proof of what exact identifier combination left the device. That is still the right boundary.
+
+8. BLE app layer.
+Rules: `R073`, `R074`, `R077`, `R078`, `R079`, `R080`, `R081`, `R082`, and `R084`.
+Status: `supported_hypothesis`.
+The BLE chain is one of the most important parts of the app, but it still sits below confirmed for good reasons. The code scans for Rossmax devices, binds them, receives measurement objects, turns them into `Vital` records, and can then write them to Firestore. At the same time the visible client code does not show application-layer MACs, signatures, replay defenses, device provenance checks, or another clear app-specific authorization layer around those measurements. The original report correctly kept that as a strong static hypothesis because there was no real device, no BLE sniffer capture, and no successful malicious read or injection test.
+
+9. Boundaries.
+Main points: several interesting issues stayed outside the rule conclusions on purpose.
+The original report listed several code-level observations that should stay visible but not be disguised as confirmed catalog findings. `FireAnalytics.getTpValue()` looks logically inverted. `DataManager.setRegion()` places an `access_token` in a query string and also appends the wrong object in the POST body path. AdServices config uses `allowAllToAccess="true"`. Google, Firebase, and Facebook keys in resources are common mobile config artifacts and were not treated as automatic vulnerabilities. The native decrypt path in the `vuioht` SDK was treated as license or SDK-key handling, not as proof that BLE payloads are protected. I am keeping those boundaries because they stop the report from drifting away from what the code actually proves.

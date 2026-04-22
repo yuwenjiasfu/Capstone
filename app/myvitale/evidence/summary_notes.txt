@@ -1,0 +1,55 @@
+MyVitale.
+
+1. Release logging of health measurements is a confirmed finding.
+Rule: R050.
+Status: confirmed.
+This is still one of the strongest chains in the MyVitale files. `app\myvitale\sources\com\myvitale\bleconnection\BuildConfig.java:6-7` shows this is a release build and `DEBUG=false`. `app\myvitale\sources\com\myvitale\bleconnection\core\AppLog.java:7-8` still enables output logging at verbose level. `app\myvitale\sources\com\myvitale\bleconnection\core\SessionController.java:192-193` logs the device address and the whole session option map at session start. The same file at `:308` logs `UserData`. The same file at `:323` logs `MeasurementRecords`. `app\myvitale\sources\com\myvitale\bleconnection\core\OmronSessionManager.java:179` prints the latest measurement record set. `app\myvitale\sources\com\myvitale\bleconnection\features\measures\presentation\MeasuresViewerPresenter.java:231-253` prints weight, BMI, basal metabolism, body fat, body water, fat free mass, muscle mass, visceral fat, and skeletal muscle. That is far more than a harmless debug string. It is a release logging path for concrete health values. So R050 should stay confirmed.
+
+2. The app clearly captures health input and health measurements.
+Rule: R006.
+Status: confirmed.
+The BLE session path is visible. `app\myvitale\sources\com\myvitale\bleconnection\features\measures\presentation\MeasuresViewerPresenter.java:101` starts the get-data action. The same file at `:106` calls `transferData(...)`. `app\myvitale\sources\com\myvitale\bleconnection\features\users\domain\model\CurrentUser.java:32` builds the Omron user map. The same file at `:37` adds date of birth. The same file at `:40-43` adds gender. The same file at `:45` adds height. The upload path also shows direct health fields. `app\myvitale\sources\com\myvitale\bleconnection\features\measures\presentation\MeasuresViewerPresenter.java:209` takes `weight`, `fatPercent`, `restMetabolism`, `bmi`, `skeletalMuscle`, `visceralFat`, and `comment`. So the health-input finding stays confirmed too.
+
+3. Health measurements reach the first-party remote API path.
+Rule: R007.
+Status: confirmed.
+This is also still strong. `app\myvitale\sources\com\myvitale\bleconnection\features\measures\domain\UploadMeasures.java:31` builds a `Measures` object and calls the repository upload. `app\myvitale\sources\com\myvitale\bleconnection\features\measures\data\remote\RemoteMeasuresDataSource.java:26` calls `measuresApi.postMeasures(...)`. `app\myvitale\sources\com\myvitale\bleconnection\features\measures\data\remote\MeasuresApi.java:37` sets the default base URL to `https://vivagym.myvitale.com`. The same file at `:40` sets the trainer-api measures path. The original audit already showed the serializer includes the health fields. That is enough to keep R007 confirmed. The careful limit is the same as before. I am confirming the external sink path. I am not calling it insecure transport because the visible endpoint is HTTPS.
+
+4. Ktor logging around auth, users, profiles, and measures is still only a strong hypothesis.
+Rule: R050 again, but lower confidence than the direct BLE logging chain.
+Status: highly suspected.
+`app\myvitale\sources\com\myvitale\bleconnection\features\authentication\service\VitaleAuthService.java:121` sets `LogLevel.ALL`. `app\myvitale\sources\com\myvitale\bleconnection\features\measures\data\remote\MeasuresApi.java:119` does the same. `app\myvitale\sources\com\myvitale\bleconnection\features\profile\data\remote\ProfilesApi.java:119` does the same. `app\myvitale\sources\com\myvitale\bleconnection\features\users\data\remote\UsersApi.java:143` does the same. That means the HTTP client layer is very chatty by design. But I still do not have runtime logs. I also do not have a confirmed dump showing headers or bodies from those clients. So I am not upgrading this part to confirmed.
+
+5. Token and configuration storage are weak, but still below confirmed device extraction.
+Rule: R054.
+Status: highly suspected.
+`app\myvitale\resources\AndroidManifest.xml:30` enables backup. `app\myvitale\sources\com\myvitale\bleconnection\features\authentication\presentation\AuthPresenter.java:164` saves the token after login. `app\myvitale\sources\com\myvitale\bleconnection\core\SessionManagerSP.java:12` defines `session_local_store`. The same file at `:21` opens the shared preferences. The same file at `:32` saves the token. `app\myvitale\sources\com\myvitale\bleconnection\PreferenceManager.java:12-13` defines `partnerKey` and `measuresServerUrl`. The same file at `:27-41` reads and writes those values in ordinary preferences. That is enough for a strong local-storage concern. It still does not become confirmed extracted local cache because I did not dump a real device data directory.
+
+6. The first-party BLE layer does not show visible application-level provenance checks.
+Rules: R073 to R084 in the BLE group.
+Status: highly suspected.
+`app\myvitale\sources\com\myvitale\bleconnection\core\OmronSessionManager.java:136-141` enables user index, consent code, read measurement records, extended records access, and reading-position control. `app\myvitale\sources\com\myvitale\bleconnection\core\SessionController.java:199` hands the session to `startSessionWithDevice(...)`. `app\myvitale\sources\com\myvitale\bleconnection\features\measures\presentation\MeasuresViewerPresenter.java:225-253` trusts returned measurement records and prints them. I did not see a first-party signature or provenance check layered on top of those measurement records. That does support the BLE application-layer concern. It still stays below confirmed because the deeper protocol and security behavior live inside the Omron SDK and the real device.
+
+7. The Omron SDK has a Firebase or BigQuery style tracking infrastructure, but I am keeping that below confirmed sharing.
+Rules: R004, R052, and R072.
+Status: highly suspected.
+`app\myvitale\sources\jp\co\omron\healthcare\matSystem\constants\ServerInfo.java:10` contains `https://%s.firebaseapp.com/bqInsert/%s/%s`. `app\myvitale\sources\jp\co\omron\healthcare\communicationlibrary\ble\BLEErrorInfo.java:61-64` calls `sendBigQuery` and then `BigQueryREST.insert(...)`. `app\myvitale\sources\jp\co\omron\healthcare\matSystem\BigQueryREST.java:31-41` generates and stores a UUID. The same file at `:45-65` adds common device info, formats JSON, stores cache data, and posts a runnable. `app\myvitale\sources\jp\co\omron\healthcare\matSystem\utils\RequestFormatter.java:136` formats the Firebase endpoint. That is enough to say the third-party SDK side has tracking or reporting infrastructure. It is not enough to say it uploaded measurement values or user tokens in this sample.
+
+8. The configurable server URL is an extra risk and it affects multiple APIs.
+Status: highly suspected as an engineering issue.
+This point was already present in the original cross-layer notes and I am keeping it. `app\myvitale\sources\com\myvitale\bleconnection\PreferenceManager.java:36-41` stores the measures server URL. `app\myvitale\sources\com\myvitale\bleconnection\features\authentication\presentation\AuthPresenter.java:202-203` saves it from the auth dialog. `app\myvitale\sources\com\myvitale\bleconnection\features\users\presentation\presenter\UsersListPresenter.java:397-398` saves it again from the users flow. `app\myvitale\sources\com\myvitale\bleconnection\features\prefs\PreferencesActivity.java:125-132` saves it from the preferences page too.
+`app\myvitale\sources\com\myvitale\bleconnection\features\authentication\service\VitaleAuthService.java:259-261`
+`app\myvitale\sources\com\myvitale\bleconnection\features\measures\data\remote\MeasuresApi.java:174-176`
+`app\myvitale\sources\com\myvitale\bleconnection\features\profile\data\remote\ProfilesApi.java:174-176`
+`app\myvitale\sources\com\myvitale\bleconnection\features\users\data\remote\UsersApi.java:218-220`
+all rebuild request URLs from that configured value. So the setting does affect real business requests. I am not converting this into a TLS rule. I am keeping it as a real engineering trust-boundary issue.
+
+9. Several tempting claims still do not fit the evidence.
+Low rules: the weak TLS group, the HTTP group, deep links, providers, dynamic loading, Facebook, scanning-profiling, and media exfiltration.
+Status: still too weak.
+I did not see a first-party trust-all certificate manager. I did not see a first-party always-true hostname verifier. I did not see first-party `http://` business endpoints for the health upload path. I did not see a deep-link surface that reaches the sensitive flow. I did not see exported provider abuse. I did not see camera or microphone exfiltration chains. So I am not pulling those into the positive side of the report.
+
+10. The server-URL issue is broader than one screen.
+Status: highly suspected as a cross-layer issue.
+This point matters because the value is reused by multiple clients. It is not only a hidden debug switch. The auth flow, the users flow, the preferences flow, and the remote API classes all touch the same base URL setting. So even though I am not turning it into a TLS finding, I do think it deserves to stay in the notes as a real trust-boundary problem.
+

@@ -1,0 +1,36 @@
+Polar Beat.
+
+1. TLS.
+Rules: BR009, BR010, BR012, BR095.
+Status: confirmed.
+This is still the strongest confirmed chain in the Polar files. It is not just a suspicious helper class. The register path actually uses the weak client. `app\polarbeat\sources\defpackage\bqh.java:33` builds the `DefaultHttpClient`. The same file at `:38` sets `ALLOW_ALL_HOSTNAME_VERIFIER`. `app\polarbeat\sources\defpackage\bqi.java:16-17` creates the TLS context and registers the custom TrustManager. `app\polarbeat\sources\defpackage\bqj.java:16,20` leaves `checkClientTrusted` empty and only performs weak server certificate logic. `app\polarbeat\sources\defpackage\bqf.java:21,25,26` sends `/register/user` with `username` and `password`. That is enough to keep BR009, BR010, and BR012 confirmed. The same chain also supports BR095 in the cloud risk view. The original final review kept that stronger conclusion. I am keeping it too. The important limit is still narrow. This confirms a real credential transport path with weak TLS validation. It does not need a separate runtime trace to remain confirmed at code level.
+
+2. Login.
+Rules: BR026 confirmed, BR027 supported_hypothesis.
+Status: mixed.
+The SharedPreferences side is confirmed. The public export side stays lower. `app\polarbeat\sources\defpackage\cmo.java` uses `UserData2` and `UserData2.ThirdParty`. The original report says this stores `username`, `password`, `profile_json`, `address_json`, and `current_device_id`. `app\polarbeat\sources\com\polar\beat\data\BeatPrefs.java:331` defines `autoSignPossible`. The same file at `:333` allows auto sign in when username and password are present. The same file at `:420,454,573,608,732` reads and writes those fields through ordinary SharedPreferences. That closes BR026 cleanly. The PNG export issue is weaker. The original files saw a path to public Pictures. But they also said the final content type was not fully closed for every case. So BR027 remains supported_hypothesis. That boundary was already correct.
+
+3. Health.
+Rules: BR018, BR025, BR091.
+Status: confirmed.
+This app stores and syncs a large amount of health and training data. The database side is not vague. `bnq` and `bnr` create the SQLite or Sugar ORM layer. `ProtoEntity`, `UserPhysicalInformation`, `TrainingSession`, and `Exercise` are the important classes. `app\polarbeat\sources\fi\polar\datalib\data\trainingsession\TrainingSession.java:611,612,696,710,716` saves training related proto content. `app\polarbeat\sources\fi\polar\datalib\data\trainingsession\exercise\Exercise.java:720,725,730,739,744,754,759,764` saves route, RR samples, samples, statistics, and transition data. The first party upload path is also visible. `TrainingSession.java:466` uploads to `/training-sessions/create`. `TrainingSession.java:491` uploads to `/physical-information`. `Exercise.java:378,410,418,426,450,458,466` uploads samples, route, RR samples, swimming samples, and transition data. That is enough to keep BR018, BR025, and BR091 confirmed together. It is more than generic health app wording. It is an actual local to cloud chain in code.
+
+4. SDKs.
+Rules: BR040 confirmed, BR092 supported_hypothesis.
+Status: mixed.
+The third party SDK story here should stay split. The static initialization and identifier access are strong enough. The precise network payload to third parties is not. The audit report points to Facebook and Google style tracking code. `app\polarbeat\sources\defpackage\bgn.java:538` writes `advertiser_id` into JSON. `app\polarbeat\sources\defpackage\bdm.java:61` uses reflection to access `AdvertisingIdClient.getAdvertisingIdInfo`. That is enough to keep BR040 confirmed. It shows SDK related identifier handling in the package. The original final review still kept BR092 as supported_hypothesis. That was because there was no packet capture proving which fields actually reached third party endpoints. I am keeping that same limit.
+
+5. Entry.
+Rules: BR032, BR059, BR060.
+Status: confirmed.
+There are three separate facts here and the original material kept them apart. The custom scheme entry is real. The old target SDK context is real. The test and environment switching code is also real. The app exposes `oauth://fi.polar.Twitter_oAuth_Settings`. That is enough for BR032 as a confirmed exposed custom scheme fact. The package also targets SDK 22. That old target behavior matters for exported component surface and legacy assumptions. Then there is `TestUIActivity`. The evidence files show that it remains in the Manifest and source. `app\polarbeat\sources\com\polar\beat\utils\TestUIActivity.java:79` writes `RemoteServer`. The same file at `:121-128` exposes Production, Preproduction, Nightly, Symbio, Mobile sandbox, Mopsi Test, and Test sandbox. The same file at `:151-156` includes exercise start, stop, status, delete, load, and dir buttons. The report kept BR060 confirmed only for the existence of environment or base URL switching logic. It did not claim normal outside apps can directly start that activity. That is the right boundary and I am keeping it.
+
+6. BLE.
+Rules: BR063 and BR066 confirmed. BR061, BR062, BR064, BR067, BR068, BR069, BR071, BR074, BR075 supported_hypothesis.
+Status: mixed.
+The BLE side here is rich, but not every part should be promoted to confirmed. The confirmed static parts are the PFTP protocol surface and the presence of control style operations. `app\polarbeat\sources\com\polar\beat\bluetooth\BluetoothService.java` scans, caches device identifiers, and sends PFTP GET, PUT, REMOVE, and startExercise operations. `app\polarbeat\resources\res\xml\server.xml:3,6` defines PFTP server and MTU values. `app\polarbeat\sources\defpackage\clq.java:18-23` defines server UUIDs. `clq.java:32` keeps a controller table keyed by device address. `clr.java:44-48` routes write requests by Bluetooth device address and characteristic UUID into `PFTPController`. That is enough to keep BR063 and BR066 confirmed. The rest still need a real device. I still do not have proof that app layer authentication is absent in a way the device actually accepts. I still do not have replay proof. I still do not have unauthorized command success. So the attack style rules stay supported_hypothesis. That matches the original review.
+
+7. Boundaries.
+Rules: BR047, BR021-BR024, BR034, BR035 not_supported.
+Status: cleared.
+I want these removed items to remain visible. The logging concern did not survive final review. The report says `cin.java` and `cpm.java` are effectively empty or no op in the relevant paths. So BR047 should not be kept as a positive finding. Provider exposure also did not close. There was no supported exported provider leak chain. The deep link sink side also did not close. The custom scheme is exposed, but the source review did not show URI parameters being pushed into a sensitive sink. That is why BR034 and BR035 stayed out. There is also an important limit on `TestUIActivity`. The original report did not say an outside app can definitely launch it directly. It only confirmed that the test UI and environment mapping remain inside the production package. That limit should stay exactly as it was.

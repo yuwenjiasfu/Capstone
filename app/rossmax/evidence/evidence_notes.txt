@@ -1,0 +1,123 @@
+1. Health.
+Related rules: `R006` is `confirmed`. `R007`, `R052`, `R059`, and `R060` stay `supported_hypothesis`.
+Files:
+`app\rossmax\sources\com\viwave\rossmaxconnect\fragment\device\DeviceScanFragment.java:123`
+`app\rossmax\sources\com\viwave\rossmaxconnect\fragment\device\DeviceScanFragment.java:409-539`
+`app\rossmax\sources\com\viwave\rossmaxconnect\fragment\device\DeviceScanFragment.java:788-822`
+`app\rossmax\sources\com\viwaveulife\vuioht\VUBleManager.java:170-202`
+`app\rossmax\sources\com\viwaveulife\vuioht\VUBleManager.java:1290-1334`
+`app\rossmax\sources\com\viwave\rossmaxconnect\advfragment\measure\delegate\MeasureBPDelegate.java:139-144`
+`app\rossmax\sources\com\viwave\rossmaxconnect\advfragment\measure\delegate\MeasureTPDelegate.java:109-145`
+`app\rossmax\sources\com\viwave\rossmaxconnect\advfragment\measure\delegate\MeasureWTDelegate.java:140-193`
+`app\rossmax\sources\com\viwave\rossmaxconnect\advfragment\measure\adapter\MeasureAdapter.java:63`
+`app\rossmax\sources\com\viwave\rossmaxconnect\advfragment\measure\adapter\MeasureAdapter.java:119`
+`app\rossmax\sources\com\viwave\rossmaxconnect\advfragment\measure\adapter\MeasureAdapter.java:151`
+`app\rossmax\sources\com\viwave\rossmaxconnect\advfragment\measure\adapter\MeasureAdapter.java:186`
+`app\rossmax\sources\com\viwave\rossmaxconnect\datastore\vital\Vital.java:245-262`
+`app\rossmax\sources\com\viwave\rossmaxconnect\datastore\vital\BpData.java:72-80`
+`app\rossmax\sources\com\viwave\rossmaxconnect\datastore\vital\BpExtension.java:108-140`
+`app\rossmax\sources\com\viwave\rossmaxconnect\datastore\vital\GlucoseData.java:94-98`
+`app\rossmax\sources\com\viwave\rossmaxconnect\datastore\vital\Spo2Data.java:147-154`
+`app\rossmax\sources\com\viwave\rossmaxconnect\datastore\vital\Weight.java:121-122`
+`app\rossmax\sources\com\viwave\rossmaxconnect\datastore\vital\fire\FireWeight.java:269-288`
+`app\rossmax\sources\com\viwave\rossmaxconnect\datastore\DataManager.java:71-82`
+`app\rossmax\sources\com\viwave\rossmaxconnect\datastore\cloudstore\firebase\FirebaseVitalStore.java:186`
+`app\rossmax\sources\com\viwave\rossmaxconnect\datastore\cloudstore\firebase\FirebaseVitalStore.java:282`
+`app\rossmax\sources\com\viwave\rossmaxconnect\datastore\cloudstore\firebase\FirebaseVitalStore.java:302`
+`app\rossmax\sources\com\viwave\rossmaxconnect\datastore\cloudstore\firebase\FirebaseVitalStore.java:321`
+`app\rossmax\sources\com\viwave\rossmaxconnect\datastore\cloudstore\firebase\FirebaseVitalStore.java:633-637`
+`app\rossmax\sources\com\viwave\rossmaxconnect\datastore\cloudstore\firebase\FirebaseVitalStore.java:674`
+Chain:
+The health chain begins in `DeviceScanFragment`, where the app installs a BLE scan callback, builds Rossmax device filters for pulse oximeters, blood pressure devices, thermometers, scales, and blood glucose devices, and then starts scanning. When the user selects a device, the code saves the observed device and keeps its MAC address as measurement context. `VUBleManager` then exposes typed callbacks for blood pressure, glucose, pulse oximetry, temperature, and weight data. The delegates call `MeasureAdapter` conversion helpers, and those helpers turn the raw measurement objects into the app's own `Vital` models.
+The model side is concrete. `Vital` carries `type`, timestamps, `measureTime`, `deviceSKU`, `deviceRecKey`, `remark`, and remove state. `BpData`, `BpExtension`, `GlucoseData`, `Spo2Data`, and `FireWeight` add the measurement-specific values. From there `DataManager.insertVitalData(...)` hands the object to `FirebaseVitalStore`, which writes into `users/{uid}/measurements/`, updates or deletes those records, and also keeps `spo2Detail` subcollections. That is why health-data handling itself stays confirmed, while cloud upload remains `supported_hypothesis` because no runtime network evidence exists.
+Limits:
+There is still no packet capture, no Firestore console output, and no runtime payload sample. The code proves the sink path exists, not that a specific real user record was observed in transit.
+
+2. Deep link.
+Related rules: `R026` and `R028` are `supported_hypothesis`. `R027` stays `not_testable`.
+Files:
+`app\rossmax\resources\AndroidManifest.xml:87-105`
+`app\rossmax\sources\com\viwave\rossmaxconnect\advfragment\caring\QRCodeFragment.java:315-328`
+`app\rossmax\sources\com\viwave\rossmaxconnect\datastore\FirestoreUtil.java:164-173`
+`app\rossmax\sources\com\viwave\rossmaxconnect\BuildConfig.java:11`
+`app\rossmax\sources\com\viwave\rossmaxconnect\datastore\invitation\DeepLinkUtil.java:157-166`
+`app\rossmax\sources\com\viwave\rossmaxconnect\datastore\invitation\DeepLinkUtil.java:34-80`
+`app\rossmax\sources\com\viwave\rossmaxconnect\datastore\invitation\DeepLinkUtil.java:80-116`
+`app\rossmax\sources\com\viwave\rossmaxconnect\SplashActivity.java:371-375`
+`app\rossmax\sources\com\viwave\rossmaxconnect\MainAdvActivity.java:1363-1397`
+`app\rossmax\sources\com\viwave\rossmaxconnect\datastore\FirestoreUtil.java:104-135`
+Chain:
+The Manifest registers `SplashActivity` for `https://r.rossmax.care` and enables `autoVerify`, but it does not restrict the path. `QRCodeFragment` and `FirestoreUtil.createInvitation(...)` build invitation objects, and `DeepLinkUtil.generateDeepLink(...)` turns the invitation id into a URL under `BuildConfig.DEEP_LINK_URL`. When the app receives the link, `SplashActivity` forwards the incoming URI into `MainAdvActivity`. `MainAdvActivity` checks login state and anonymous state, then passes the URI into `DeepLinkUtil.resolveDeepLink(...)`.
+`DeepLinkUtil.resolveDeepLink(...)` reads the `id` query parameter, looks up the invitation in Firestore, checks for null, expiration, used state, and self-follow, then shows a follow confirmation dialog. Only after user confirmation does the code call `FirestoreUtil.doIFollowYou(...)`, which creates the `followings` and `followers` relationship documents. That is why the original report kept the deep link finding below confirmed. The path is real, but the guards and confirmation steps mean the present evidence does not prove unauthorized execution.
+Limits:
+The asset link verification state was not checked online, so `R027` remains out. There is also no runtime deep link reproduction showing a bad path or a bypassed confirmation.
+
+3. WebView.
+Related rules: `R029` and `R031` stay `supported_hypothesis`.
+Files:
+`app\rossmax\sources\com\viwave\rossmaxconnect\advfragment\WebFragment.java:102-144`
+`app\rossmax\sources\com\viwave\rossmaxconnect\advfragment\WebFragment$initWebView$1$1.java:34-71`
+`app\rossmax\sources\com\viwave\rossmaxconnect\SetRegionActivity.java:240-247`
+`app\rossmax\sources\com\viwave\rossmaxconnect\SetRegionActivity.java:266-279`
+`app\rossmax\sources\com\viwave\rossmaxconnect\SetRegionActivity.java:319`
+`app\rossmax\sources\com\viwave\rossmaxconnect\SetRegionActivity.java:437`
+Chain:
+`WebFragment` enables JavaScript, enables automatic window opening, and loads remote URLs. For normal `http` and `https` URLs it lets WebView handle the page. For `intent://` and other schemes it can also hand control to Android intents. That keeps the popup or differential-context concern alive as a hypothesis. `SetRegionActivity` is the sharper part of the chain. It loads an S3-hosted privacy or region page, enables JavaScript, and uses `onJsPrompt(...)` to receive a `region` value. The prompt handler only checks `message == "region"` and does not validate the origin URL before later writing `regionShortCode` to the user's Firestore profile after the user confirms.
+Limits:
+There is no malicious page reproduction and no proof that an attacker-controlled page can get into this exact WebView state. So the correct level is still `supported_hypothesis`.
+
+4. Logs.
+Related rules: `R050` is `supported_hypothesis`.
+Files:
+`app\rossmax\sources\com\viwave\rossmaxconnect\login\LoginPage.java:612`
+`app\rossmax\sources\com\viwave\rossmaxconnect\login\LoginPage.java:770`
+`app\rossmax\sources\com\viwave\rossmaxconnect\login\LoginPage.java:824`
+`app\rossmax\sources\com\viwave\rossmaxconnect\login\LoginPage.java:849`
+`app\rossmax\sources\com\viwave\rossmaxconnect\login\LoginPage.java:929`
+`app\rossmax\sources\com\viwave\rossmaxconnect\login\LoginPage.java:992`
+`app\rossmax\sources\com\viwave\rossmaxconnect\login\LoginPage.java:1056`
+`app\rossmax\sources\com\viwave\rossmaxconnect\ViApplication.java:42-49`
+`app\rossmax\sources\com\viwave\rossmaxconnect\api\ApiInstance.java:67`
+`app\rossmax\sources\com\viwave\rossmaxconnect\api\ApiInstance.java:75-89`
+`app\rossmax\sources\com\viwave\rossmaxconnect\api\ApiInterface.java:17-18`
+`app\rossmax\sources\com\viwave\rossmaxconnect\datastore\DataManager.java:141`
+`app\rossmax\sources\com\viwave\rossmaxconnect\datastore\DataManager.java:387-390`
+`app\rossmax\sources\com\viwave\rossmaxconnect\datastore\DataManager.java:486-489`
+`app\rossmax\sources\com\viwave\rossmaxconnect\datastore\DataManager.java:538-546`
+Chain:
+`LoginPage` logs Google account fields, Firebase user fields, and a Facebook access token path. `ApiInstance` adds `HttpLoggingInterceptor` with `BASIC` level, and the logger sends messages into `Timber.i(...)`. `ViApplication` shows that the app logging tree forwards messages above low priorities. `ApiInterface.deleteAccount(...)` puts `access_token` in the query string, and `DataManager` builds other Cloud Functions URLs that also include `access_token` and sometimes `userId` in the query. The `setRegion` path is especially messy because it mixes token handling into both query and body logic. All of that makes the log-risk chain real enough to keep.
+Limits:
+There is no logcat, so the file cannot say those values definitely appeared in runtime logs. The original report was right to keep this at `supported_hypothesis`.
+
+5. SDKs.
+Related rules: `R041`, `R062`, `R065`, `R071`, `R085`, `R086`, and `R087` stay `supported_hypothesis`.
+Files:
+`app\rossmax\resources\AndroidManifest.xml:128-131`
+`app\rossmax\resources\AndroidManifest.xml:265-282`
+`app\rossmax\resources\res\values\strings.xml:334-335`
+`app\rossmax\sources\com\viwave\rossmaxconnect\utils\FireAnalytics.java:34-64`
+`app\rossmax\sources\com\viwave\rossmaxconnect\MainAdvActivity.java:362-382`
+Chain:
+The package contains Facebook app id and client token resources, plus `FacebookInitProvider` and Facebook receivers in the Manifest. The one-party code does not show a clear call to conservative Facebook privacy toggles such as `setAutoLogAppEventsEnabled`, `setAdvertiserIDCollectionEnabled`, or `setDataProcessingOptions`. On the Firebase side, `FireAnalytics` logs screen and health context events, including `vital_unit` fields for blood pressure, glucose, weight, and temperature categories. `MainAdvActivity` also triggers analytics-related work during navigation. That is enough to keep third-party analytics and tracking suspicion in place.
+Limits:
+No startup traffic, no consent-path capture, and no final recipient payload were available, so these rules stay below confirmed.
+
+6. Local state.
+Related rules: this section mainly supports the exclusions around `R051`, `R054`, `R055`, and `R076`.
+Files:
+`app\rossmax\resources\AndroidManifest.xml:77-86`
+`app\rossmax\resources\res\xml\data_extraction_rules.xml`
+`app\rossmax\sources\com\viwaveulife\vuioht\VUBleManager.java:1112-1143`
+`app\rossmax\sources\com\viwaveulife\vuioht\VUBleManager.java:1387-1388`
+`app\rossmax\sources\com\viwave\rossmaxconnect\utils\PreferenceUtil.java:82-99`
+`app\rossmax\sources\com\viwave\rossmaxconnect\settings\SettingPref.java:42-84`
+Chain:
+The Manifest sets `allowBackup=false`, `fullBackupContent=false`, and uses data-extraction rules that exclude the interesting storage areas for both cloud backup and device transfer. `VUBleManager` stores observe-device state in app-private SharedPreferences. `PreferenceUtil` stores device info by MAC address in default preferences, and `SettingPref` stores region, unit, and threshold values. The original report used this group of facts to explain why it did not confirm weak external health-file storage or backup leakage rules in this app.
+Limits:
+The app still keeps useful local state, but the current static evidence does not show health-measurement files written to weak external storage or reusable BLE session secrets stored in an obviously unsafe way.
+
+7. BLE limits.
+Main points:
+The most important limitation is still the missing runtime BLE evidence. There is no sniffer capture, no real peripheral test, no same-device malicious app test, and no replay or injection proof. The negative static evidence does matter: the visible measurement path does not show app-layer MACs, signatures, per-measurement attestation, or another clear provenance check before data becomes a `Vital` and reaches Firestore. But the report should still keep those BLE rules at `supported_hypothesis`, not confirmed.
+The original database-outside notes also matter here. Resource keys and the `vuioht` native decrypt path were treated as SDK configuration or license handling, not as proof that BLE measurement payloads use strong application-layer protection.
+

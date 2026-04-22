@@ -1,0 +1,98 @@
+1. Keys.
+Related rules: BR016.
+Status: confirmed.
+Files:
+`app\nRF\evidence\04_final_mentor_review.md:124-138`
+`app\nRF\evidence\04_final_mentor_review.md:169-173`
+`app\nRF\resources\res\values\strings.xml`
+Points:
+The final mentor review has a dedicated correction for this item. It says the APK really contains Google and Firebase identifiers. It names `google_api_key`. It names `google_app_id`. It names `project_id`. The review then adds the boundary that these are common Android project configuration artifacts. The review also says they are not the same as a backend client secret. That boundary matters because it prevents overclaiming. The positive conclusion is still valid. A reviewer can open the strings resources and confirm the identifiers exist. So the artifact itself is confirmed. The impact is intentionally described more narrowly.
+Limits:
+No backend exploit was shown. No privileged server action was shown. No proof of secret scope was shown. This is a package artifact finding only.
+
+2. Health.
+Related rules: BR018.
+Status: confirmed.
+Files:
+`app\nRF\sources\ae\d.java`
+`app\nRF\sources\ae\c.java`
+`app\nRF\sources\be\a.java`
+`app\nRF\evidence\00_scope_and_evidence_inventory.md:224-226`
+`app\nRF\evidence\03_evidence_chains.md:38-40`
+Chain:
+The evidence inventory lists the actual model classes. `ae\d.java` is `GLSRecord`. That model includes sequence number. It includes time. It includes glucose concentration. It includes unit. It includes type. It includes status. It includes sample location. `ae\c.java` is `GLSMeasurementContext`. That model includes carbohydrate. It includes carbohydrate amount. It includes meal. It includes tester. It includes health. It includes exercise duration. It includes exercise intensity. It includes medication. It includes medication quantity. It includes medication unit. It includes HbA1c. `be\a.java` is `HRSData`. That model includes heart rate. It includes sensor contact. It includes expanded energy. It includes RR intervals. The evidence chain also notes Blood Pressure, Heart Rate, Glucose, and Health Thermometer UI strings. So this is not just a BLE utility in the abstract. It really contains health measurement profile code and data models.
+Limits:
+This item confirms data model presence. It does not by itself prove cloud upload. It does not by itself prove insecure storage. It does not need those extra steps to stay confirmed.
+
+3. Logs.
+Related rules: BR047.
+Status: supported_hypothesis.
+Files:
+`app\nRF\sources\hf\j.java`
+`app\nRF\sources\no\nordicsemi\kotlin\ble\client\android\internal\NativeGattCallback.java`
+`app\nRF\sources\no\nordicsemi\android\nrftoolbox\ProfileService.java`
+`app\nRF\evidence\03_evidence_chains.md:23-55`
+`app\nRF\evidence\04_final_mentor_review.md:84-96`
+Chain:
+`hf\j.java` is part of the BLE peripheral cache path. The evidence chain says address strings are mapped and cached there. The BLE callback surface then moves into `NativeGattCallback`. The callback receives characteristic change events. It also receives characteristic read events. In both cases the byte array value is available to app side code. The evidence chain states that the logger path formats the byte array into a printable string. The same path includes characteristic UUID in the log message. This matters because health profiles can map those bytes to measurement values. `ProfileService.java` then creates `nRFLoggerTree` with `deviceAddress`. That makes the logging path more than a generic SDK guess. The same evidence file links the health models back into this callback path. So the conservative reading is that raw BLE values can pass through a logging path. That is a useful finding. But it still depends on runtime behavior. A release build may have different log behavior. A real session might not persist the values in a readable place. No logcat sample was preserved in the material I used. No provider database was exported in the material I used.
+Limits:
+No actual user measurement in logs was shown. No other app read path was shown. No network upload of those raw values was shown. That is why BR047 stays supported_hypothesis and not confirmed.
+
+4. BLE write.
+Related rules: BR061, BR067, BR074.
+Status: supported_hypothesis.
+Files:
+`app\nRF\sources\hf\l.java`
+`app\nRF\evidence\03_evidence_chains.md:76-117`
+`app\nRF\evidence\04_final_mentor_review.md:73`
+Chain:
+`hf\l.java` is the central write wrapper in the material. The evidence chain points to `a()` for `BluetoothGatt.readCharacteristic`. It points to `b(byte[] bArr, ...)` for write. On older Android paths the wrapper uses `setValue(bArr)`. It then calls `writeCharacteristic(characteristic)`. On Android 13 and later the wrapper uses the newer `writeCharacteristic(characteristic, bArr, writeType)` path. The code does check characteristic properties. It distinguishes write, write without response, and signed write capabilities. That is a transport capability check. It is not an application security check. The evidence chain does not show an app specific token. It does not show an HMAC. It does not show a signature wrapper. It does not show a nonce or anti replay field. On top of that, UART macro support can feed user controlled command text into the write path. So the application side really can generate arbitrary payload bytes for a compatible characteristic. That is enough to justify the hypothesis. It is still not enough to say any target device is vulnerable. The device may enforce its own application protocol. The device may require challenge response. The device may reject untrusted values even if the app side does not show that logic.
+Limits:
+No target GATT database was captured. No device protocol was captured. No successful replay or unauthorized control was shown. The supported level is the correct level here.
+
+5. UART storage.
+Related rules: BR025.
+Status: supported_hypothesis.
+Files:
+`app\nRF\sources\dd\d.java`
+`app\nRF\sources\no\nordicsemi\android\nrftoolbox\uart\domain\XmlConfiguration.java`
+`app\nRF\sources\no\nordicsemi\android\nrftoolbox\uart\domain\XmlMacro.java`
+`app\nRF\evidence\03_evidence_chains.md:139-171`
+`app\nRF\evidence\00_scope_and_evidence_inventory.md:181-195`
+Chain:
+`dd\d.java` defines the schema for the UART configuration storage. The table is `configurations`. The columns are `_id`, `name`, `xml`, and `deleted`. The `xml` column is the key column for this finding. `XmlConfiguration.java` models configuration content. `XmlMacro.java` models macro content. The evidence file explicitly notes that `XmlMacro` includes `command`. That means a command string can be serialized into XML. The XML can then be stored as plain text in the `configurations.xml` field. The resource strings also show save, load, edit, and delete actions for UART macros. So the storage path is not hypothetical. The only uncertain part is sensitivity. If a user stores harmless test commands, the data is less sensitive. If a user stores proprietary protocol payloads or passwords, the sensitivity rises. The original files were careful to preserve that difference. I am keeping the same difference here. The app also has `allowBackup=false`. The data extraction rules also reduce backup style exposure. But those two points do not encrypt the database contents themselves. They only narrow one access path.
+Limits:
+No database export was provided. No macro with real secret content was provided. No third party read access to the private app directory was demonstrated.
+
+6. SDKs.
+Related rules: BR040, BR041, BR092.
+Status: mixed.
+Files:
+`app\nRF\sources\no\nordicsemi\android\nrftoolbox\NrfToolboxApplication.java`
+`app\nRF\sources\wb\c.java`
+`app\nRF\sources\af\m.java`
+`app\nRF\evidence\03_evidence_chains.md:186-237`
+`app\nRF\evidence\04_final_mentor_review.md:33-52`
+Chain:
+The evidence chain starts at app startup. The Manifest includes FirebaseInitProvider and related Firebase components. That means provider level initialization is present in the package. `NrfToolboxApplication.onCreate()` then obtains the analytics wrapper. `vb.b` defines `APP_OPEN`. The application path submits `APP_OPEN` into the wrapper on startup. So there really is an app start analytics path in code. But the defaults matter more than the mere presence of the SDK. The Manifest sets `firebase_analytics_collection_enabled=false`. It also sets `google_analytics_adid_collection_enabled=false`. It also sets `google_analytics_ssaid_collection_enabled=false`. Then `wb\c.java` adds a user choice path. The evidence inventory says this class persists the permission choice. It also calls Firebase Analytics collection enabled state. That is exactly why BR041 was removed from the positive set. There is visible gating. The code does not support a confident pre consent analytics claim. Crashlytics still stays relevant in a narrower way. `af\m.java` constructs Crashlytics headers. Those headers include `X-CRASHLYTICS-GOOGLE-APP-ID`. They include device model. They include OS build version. They include OS display version. They include installation ID. So device and installation identifier payload capability is still visible. That is enough for BR092 as a supported_hypothesis. It is still not enough to claim actual transmission timing or actual payload contents on the wire.
+Limits:
+No startup packet capture exists in the material. No pre consent third party request was captured in the material. No health payload to Firebase or Crashlytics was shown in the material.
+
+7. Boundaries.
+Related rules: BR028, BR006, BR009, BR010, BR021-BR024, BR029-BR035.
+Status: cleared.
+Files:
+`app\nRF\evidence\00_scope_and_evidence_inventory.md:49`
+`app\nRF\evidence\00_scope_and_evidence_inventory.md:76-79`
+`app\nRF\evidence\03_evidence_chains.md:326`
+`app\nRF\evidence\03_evidence_chains.md:335`
+`app\nRF\evidence\04_final_mentor_review.md:114`
+Notes:
+Backup is not a supported positive finding here. The Manifest sets `allowBackup=false`. The evidence files also mention data extraction rules that exclude sensitive stores. So BR028 was correctly removed. Provider exposure also does not close. FirebaseInitProvider is not exported in the problematic way. `ProfileService` is `exported=false`. That blocks an easy external component claim. Cleartext transport also does not close. I did not keep any first party HTTP business endpoint claim here. Trust all TLS also does not close. The positive TLS patterns from other apps do not appear here in the same way. Deep link and exported app component chains also do not close. Keeping these negatives visible matters. It shows the report was not built by forcing every catalog rule into every app.
+
+8. Priority.
+Related rules: BR090.
+Status: confirmed.
+Notes:
+The final mentor review kept BR090. The reason is practical. The static evidence already points to the best dynamic checks. The first check is a real BLE session with logcat and any nRF Logger output. The second check is startup traffic before and after consent changes. The third check is a controlled UART macro containing a test secret. The fourth check is an attempted write to a real target device over the generic wrapper. This is useful because it comes straight from concrete code paths. It is not a speculative testing plan.
+

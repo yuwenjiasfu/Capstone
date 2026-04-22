@@ -1,0 +1,166 @@
+1. External entry into the local video consultation state.
+Related rules: BR029 and BR059.
+Status: confirmed.
+Manifest:
+`app\bupa\resources\com.bupa.digitalprimarycare.apk\AndroidManifest.xml:132-162`
+`app\bupa\resources\com.bupa.digitalprimarycare.apk\AndroidManifest.xml:163-234`
+Files:
+`app\bupa\sources\com\zoontek\rnbootsplash\RNBootSplashActivity.java:14-22`
+`app\bupa\sources\com\babylon\cyrus\MainActivity.java:90`
+`app\bupa\sources\com\babylon\cyrus\MainActivity.java:94-119`
+`app\bupa\sources\com\babylon\cyrus\MainActivity.java:149`
+`app\bupa\sources\com\babylon\cyrus\MainActivity.java:158-159`
+`app\bupa\sources\com\babylon\cyrus\MainActivity.java:178`
+Manifest:
+`RNBootSplashActivity` is exported. It is browsable. It accepts `http`. It accepts `https`. It also accepts the custom scheme `bupabluahealth`. `MainActivity` is also exported and has multiple callback filters.
+Forwarding:
+`RNBootSplashActivity` builds the next intent. It copies the original extras. It copies the original data URI. It copies the original action. It copies the original type. It then starts `MainActivity`.
+Business:
+`MainActivity` reads `RingerService.LAUNCH_TYPE`. It handles `ACCEPTED`. It handles `INCOMING_CALL`. It handles `STOPPED`. It calls the same launch-type logic from both `onCreate()` and `onNewIntent()`. It also initializes the Branch session from the incoming data URI in `onStart()`.
+Basis:
+The chain is not only exported entry plus guesswork. The chain goes from manifest entry to forwarding code to local business branch. That is enough to confirm local state influence.
+Limit:
+I am not saying a real backend appointment was changed. I am not saying login was bypassed. I am not saying an unauthenticated outside app can complete a real consultation flow end to end.
+
+2. Local service and notification behavior that closes the same consultation chain.
+Related rules: BR029 and BR059.
+Status: confirmed.
+Files:
+`app\bupa\sources\com\babylon\cyrus\videoconsultationmodule\RingerService.java:26-29`
+`app\bupa\sources\com\babylon\cyrus\videoconsultationmodule\RingerService.java:53-58`
+`app\bupa\sources\com\babylon\cyrus\videoconsultationmodule\RingerService.java:66-71`
+`app\bupa\sources\com\babylon\cyrus\videoconsultationmodule\RingerService.java:157-170`
+`app\bupa\sources\com\babylon\cyrus\videoconsultationmodule\RingerService.java:174-185`
+`app\bupa\sources\com\babylon\cyrus\videoconsultationmodule\OngoingCallService.java:32-35`
+`app\bupa\sources\com\babylon\cyrus\videoconsultationmodule\OngoingCallService.java:49-50`
+Visible:
+`RingerService` defines the appointment ID extra. It defines the clinician name extra. It defines the launch type extra. It creates the accept pending intent into `MainActivity`. It creates the incoming-call pending intent into `MainActivity`. It records appointment-received metrics in the start path. It records accepted or declined events in the stop path. `OngoingCallService` carries the clinician name into the notification.
+Impact:
+This closes the local effect chain. The launch-type branch is not cosmetic. It reaches local notification and service behavior.
+Boundary:
+Still local app behavior only. Still not proof of a server-side appointment change.
+
+3. Redux persistence and token-related state design.
+Related rules: BR026 and BR016.
+Status: confirmed at code level.
+Main file:
+`app\bupa\resources\com.bupa.digitalprimarycare.apk\assets\index.android.bundle:734`
+Bundle:
+`app\bupa\resources\com.bupa.digitalprimarycare.apk\assets\index.android.bundle:669`
+Bundle:
+`redux-persist-transform-encrypt` is present. A persist whitelist includes `session`. The same whitelist also includes `monitor`, `resources`, and `shared`. Session state includes `authToken`. Session state includes `authTokenExpires`. Session state includes `idToken`. Session state includes `refreshToken`. The encrypt transform uses `secretKey: getKey()`.
+Basis:
+The secret comes from packaged code. That means the protection is recoverable from the APK. That is enough for a code-level weak storage design finding.
+Boundary:
+No real device storage file was extracted. No live token validity was shown. No runtime keychain or persistence sample was dumped.
+
+4. Cleartext policy and network boundary.
+Related rules: BR006 confirmed, BR013 not supported.
+Main file:
+`app\bupa\resources\com.bupa.digitalprimarycare.apk\AndroidManifest.xml:121`
+`app\bupa\resources\com.bupa.digitalprimarycare.apk\AndroidManifest.xml:125`
+`app\bupa\resources\com.bupa.digitalprimarycare.apk\AndroidManifest.xml:129`
+Endpoints:
+`app\bupa\resources\com.bupa.digitalprimarycare.apk\assets\index.android.bundle:855`
+`app\bupa\resources\com.bupa.digitalprimarycare.apk\assets\index.android.bundle:858`
+Visible:
+`allowBackup=false`. `usesCleartextTraffic=true`. `requestLegacyExternalStorage=true`. The first-party business endpoints shown in the bundle are mostly HTTPS. The bundle also contains localhost and dev-style HTTP artifacts.
+Boundary:
+The cleartext-allowed policy is directly visible and confirmed. The sensitive production HTTP business endpoint claim is not closed. No packet capture exists. No production health-data-over-HTTP trace exists.
+
+5. Embedded keys and secret-like identifiers.
+Related rule: BR016.
+Status: confirmed.
+Files:
+`app\bupa\resources\com.bupa.digitalprimarycare.apk\assets\appcenter-config.json:2`
+`app\bupa\resources\res\values\strings.xml:175-176`
+`app\bupa\resources\res\values\strings.xml:276`
+`app\bupa\resources\res\values\strings.xml:278`
+`app\bupa\resources\com.bupa.digitalprimarycare.apk\AndroidManifest.xml:280-284`
+`app\bupa\resources\com.bupa.digitalprimarycare.apk\assets\index.android.bundle`
+Visible:
+AppCenter secret. Braze or Appboy key and endpoint. Google key material. Branch key material. Sentry DSN and liveChat-style key material in the bundle. First-party default API key according to the original review.
+Boundary:
+This is static extractability. Not backend compromise. Not guaranteed misuse.
+
+6. SDK startup and identifier-access capability.
+Related rules: BR014 and BR040 confirmed.
+Files:
+`app\bupa\sources\com\babylon\cyrus\MainApplication.java:113-121`
+`app\bupa\resources\com.bupa.digitalprimarycare.apk\assets\index.android.bundle:7`
+`app\bupa\resources\com.bupa.digitalprimarycare.apk\AndroidManifest.xml:67`
+`app\bupa\resources\com.bupa.digitalprimarycare.apk\AndroidManifest.xml:98`
+`app\bupa\resources\com.bupa.digitalprimarycare.apk\assets\index.android.bundle:859`
+Visible:
+Braze or Appboy initialization. AppCenter initialization. Branch initialization. Sentry and native event startup code in the bundle. `AD_ID` permission. `READ_PHONE_STATE` permission. Device-derived and visitor-style parameters in auth URL construction.
+Boundary:
+This is enough for static capability. It is not enough for real third-party payload confirmation.
+
+7. Third-party collection or sending remains below confirmed.
+Related rules: BR041 and BR092.
+Status: highly suspicious.
+Impact:
+Multiple SDKs are started. Identifier-related permissions exist. Parameter-building code exists. Third-party namespaces exist.
+Limit:
+No packet capture. No consent-timing proof. No runtime payload sample. No observed recipient-side data.
+
+8. Deep link and custom-scheme surface.
+Related rule: BR032.
+Status: confirmed.
+Main file:
+`app\bupa\resources\com.bupa.digitalprimarycare.apk\AndroidManifest.xml:132-234`
+Visible:
+Browsable entry. Custom scheme. Web-style host and path. Multiple callback filters on `MainActivity`.
+Boundary:
+Exposed entry is confirmed. Successful hijack is not confirmed.
+
+9. Deep link misuse and auth bypass path.
+Related rules: BR033, BR034, BR035, BR084.
+Status: BR033 and BR034 highly suspicious.
+Status: BR035 and BR084 not testable.
+Limit:
+No asset-links verification result. No runtime scheme-conflict test. No route-bypass proof. No auth-bypass proof.
+
+10. Sensitive data categories present in code and UI surface.
+Related rules: BR018, BR019, BR020.
+Status: confirmed.
+Main file:
+`app\bupa\resources\com.bupa.digitalprimarycare.apk\assets\index.android.bundle`
+Visible:
+patient consultation prescription referral pharmacy medical history insurance member id monitor and report surface GAD-7 PHQ-9 anxiety depression
+Basis:
+It confirms data-domain presence. It does not depend on packet capture.
+
+11. Cloud-side processing of those data categories.
+Related rules: BR091, BR094, BR096.
+Status: highly suspicious.
+Basis:
+The app clearly handles sensitive data categories. The bundle points to first-party service and GraphQL endpoints. The categories and the endpoints fit each other.
+Limit:
+No payload capture. No runtime request body. No observed recipient-side field list.
+
+12. Provider and file-sharing configuration.
+Related rule: BR027.
+Status: preliminary suspicion.
+Files:
+`app\bupa\resources\com.bupa.digitalprimarycare.apk\AndroidManifest.xml:300-308`
+`app\bupa\resources\com.bupa.digitalprimarycare.apk\AndroidManifest.xml:338-345`
+Visible:
+Two provider declarations. Same authority reused. Grant URI permissions. Broad path configuration in the provider XML noted by the original evidence.
+Limit:
+Providers are not exported. No actual leak path was shown.
+
+13. BLE stays weak in the current Bupa source set.
+Related rule: BR044.
+Status: preliminary suspicion.
+Visible:
+`BLUETOOTH`
+`BLUETOOTH_ADMIN`
+`BLUETOOTH_SCAN`
+`BLUETOOTH_CONNECT`
+Limit:
+No first-party BLE scan path closed. No first-party GATT path closed. No first-party BLE parser path closed. No BLE-to-cloud path closed.
+
+14. Things the original Bupa review explicitly did not support.
+BR009 not supported. BR010 not supported. BR011 not supported. BR013 not supported as a confirmed sensitive HTTP endpoint. BR021 to BR024 not supported. BR047 not supported. BLE GATT and BLE-to-cloud findings not supported in first-party code. I am keeping these clearances because they are part of why the original review stayed careful.
+

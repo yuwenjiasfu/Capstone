@@ -1,0 +1,241 @@
+1. Token.
+Related rules: `rule26` and `rule41` are `confirmed`. `rule76` is also part of the same path and stays `confirmed`.
+Files:
+`app\xiangshan\sources\com\xs\smartlink\MyApp.java:16-25`
+`app\xiangshan\sources\com\xs\smartlink\ui\MainActivity.java:131-140`
+`app\xiangshan\sources\com\xs\smartlink\ui\MainActivity.java:196-205`
+`app\xiangshan\sources\com\hybirdlib\hybirdlib\SdkPluginUtils.java:1267-1270`
+`app\xiangshan\resources\assets\apps\__UNI__2574FEC\www\app-service.js:26`
+`app\xiangshan\resources\assets\apps\__UNI__2574FEC\www\pages\nvue\member-points\web.js:37`
+Chain:
+`MyApp.onCreate()` prepares the app-wide shared state and bridge path first. It calls `SharedPreferencesUtil.d(this)` and also initializes the bridge layer through `SdkPluginUtils.instance.init(this)`. That matters because later token handling is not trapped inside one isolated screen. The native shared-preference side and the JS bridge side are both alive before the main business pages continue.
+
+In the compiled UNI business layer, the storage map includes a login-credential entry and an account-info entry, and the same file defines the base store around that state. The base store reads token state from local storage, and `setToken(...)` writes the token back through `globalSetStorage(...)`. The original material also tracked account persistence in the account store, which writes the full account object into the account-info entry. That is the first part of the local token and account chain.
+
+The native side then reuses the same token path. `MainActivity.initData()` logs `flutter.sp_token` with `Log.i(TAG, "token: " + ...)`. This is not a weak naming coincidence. The same native package is reading the exact shared-preference token key that the business side later depends on.
+
+The bridge side exposes the same token again. In `SdkPluginUtils.java`, one callback path returns `SharedPreferencesUtil.c("flutter.sp_token")`, and another path clears `flutter.sp_token`. That means the native bridge layer can both expose and remove the same token value that `MainActivity` logged and that the UNI business layer persisted.
+
+The remote H5 flow is part of the same evidence chain. `pages/nvue/member-points/web.js` constructs a remote points URL under `sharecn.senssun.com`, and the query object includes `token`, `accountId`, version, status-bar height, window height, and page information. The original material was careful on one detail that should remain visible: even if the token ends up after the hash section of the URL, the remote page script can still read it inside the browser context that the app opened.
+
+The request layer is the final part of the same chain. The original audit traced the compiled request code in `app-service.js` back to the request implementation and noted that the shared business headers include `token`, `time`, and `sign`. That is why this is not just a local-storage note or just a log note. The same token path moves through persistence, native read, native log, bridge exposure, authenticated request context, and remote H5 handoff.
+
+Boundary:
+I am not claiming a real token sample from runtime storage, a real logcat capture, or a real packet capture. The point is narrower and already proven by the checked files: the token is persisted, read back natively, logged, exposed through the bridge, and reused in business request contexts.
+
+2. Database.
+Related rules: `rule25`, `rule28`, and `rule76` are `confirmed`. `rule82` stays `supported_hypothesis`.
+Files:
+`app\xiangshan\resources\assets\apps\__UNI__2574FEC\www\app-service.js:26`
+`app\xiangshan\resources\AndroidManifest.xml:141`
+`app\xiangshan\resources\assets\apps\__UNI__2574FEC\www\app-config-service.js:5`
+Chain:
+The local database name in the original material is `smartlink_v1`, and the same compiled business file defines the table structure around it. The most important tables are not generic cache tables. `user_v2` holds user-profile data such as `userId`, `accountId`, `name`, `birthday`, `height`, `weight`, `bmi`, `activity`, and related profile fields. `device_v1` holds `accountId`, `deviceId`, `productId`, `supplierId`, `serialNumber`, unit, source, and creation-time style fields. `bodyFatScaleRecords_v5` holds values such as `bodyFat`, `bmi`, `bmr`, `bodyAge`, `boneMass`, `deviceId`, and `heartRate`. `bloodPressure_v1` holds blood-pressure records including `heightPressure`, `lowPressure`, and record time. `heartRate_v1` holds `heartRate`, `measureInfo`, `measureQuality`, and record time. The original material also listed `bloodSugar_v1` and `bloodUricAcid_v1` in the same local schema area.
+
+Those tables are not left as isolated local-only models. The same compiled business layer links them to concrete offline upload endpoints. The original material listed `/data/v1/offline/user/data`, `/data/v1/offline/device/data`, `/data/v1/offline/four/historyData`, `/data/v1/offline/bloodPressure/history/data`, and `/data/v1/offline/heartRate/history/data` as matched sync targets for the local structures. That is why `rule76` and `rule82` were tied to the same section in the original audit.
+
+The route layer in `app-config-service.js` helps confirm that the data model matches real business scope. The shipped routes include body-fat pages, blood pressure, blood glucose, blood uric acid, heart-rate pages, baby pages, sports pages, diet pages, kitchen pages, and device-management pages. That keeps the data model grounded in real features rather than dead code.
+
+`rule28` stays in this same chain because the Manifest keeps `allowBackup="true"` while the local layer already holds token state, account state, device identifiers, and health measurements. The original report did not need a runtime database dump to confirm that structural combination. The database schema, account storage, and backup allowance already exist together in the checked package.
+
+`rule82` stays one step lower. The local model clearly links user, account, device, and measurement fields, and it clearly links them to sync endpoints. What is still missing is one final serialized request body that proves a full identity-device-measurement combination in one captured payload. That missing final body is the reason the rule stays `supported_hypothesis` instead of moving up.
+
+Boundary:
+I am not reducing this section to a vague sentence like "the app stores health data." The important point is the connected chain: named local tables, named profile and measurement fields, named sync endpoints, and the backup surface above them.
+
+3. Transport.
+Related rules: `rule06` is `confirmed`. `rule48` stays `supported_hypothesis`.
+Files:
+`app\xiangshan\resources\AndroidManifest.xml:146`
+`app\xiangshan\resources\assets\apps\__UNI__2574FEC\www\app-service.js:26`
+Chain:
+The Manifest explicitly sets `android:usesCleartextTraffic="true"`. That is the first part of the transport finding.
+
+The second part is in the compiled business layer. The base-URL definitions in `app-service.js` include a dev business host `http://smartlinkdev.senssun.com`, a dev global host `http://10.8.8.128:8524`, and a test global host `http://globaltest.senssun.com`. The same file also includes the HTTPS production values `https://smartlink.senssun.com` and `https://global.senssun.com`. This is important because it shows that the cleartext surface is not just a Manifest switch with no visible business endpoints behind it.
+
+That is enough for `rule06`. The original report did not need to prove that every production request uses HTTP. It only needed to show that the package is globally cleartext-capable and that real HTTP business endpoints are present in the shipped assets.
+
+`rule48` stays below confirmed because the dev, test, and prod endpoint set does show a deployment-surface issue, but the checked files do not yet show a final environment-control path that would let me say the production app can be switched or abused in a specific way. That is why the original material kept it as `supported_hypothesis`.
+
+Boundary:
+I am not turning dev or test URLs into a claim that the production medical or health sync path definitely uses HTTP. The confirmed part is the transport surface and the presence of HTTP business endpoints in the package.
+
+4. Identifiers.
+Related rules: `rule02`, `rule03`, `rule14`, and `rule15` are `confirmed`. `rule77` uses the same collection surface and stays `supported_hypothesis`.
+Files:
+`app\xiangshan\resources\AndroidManifest.xml:63`
+`app\xiangshan\resources\AndroidManifest.xml:103`
+`app\xiangshan\sources\cn\jiguang\bv\a.java:187`
+`app\xiangshan\sources\cn\jiguang\bv\a.java:203`
+`app\xiangshan\sources\cn\jiguang\bv\a.java:1649`
+`app\xiangshan\sources\cn\jiguang\bv\a.java:1683`
+`app\xiangshan\sources\com\umeng\commonsdk\statistics\common\DeviceConfig.java:610`
+`app\xiangshan\sources\com\umeng\commonsdk\statistics\common\DeviceConfig.java:626`
+`app\xiangshan\sources\com\umeng\commonsdk\statistics\common\DeviceConfig.java:681`
+`app\xiangshan\sources\com\umeng\commonsdk\statistics\common\DeviceConfig.java:711-714`
+`app\xiangshan\sources\com\umeng\commonsdk\statistics\common\DeviceConfig.java:738`
+`app\xiangshan\sources\com\umeng\analytics\pro\ak.java:37-38`
+Chain:
+The Manifest declares `READ_PHONE_STATE`, and it also declares `com.google.android.gms.permission.AD_ID`. That is only the permission and advertising-id surface, not the full rule on its own.
+
+The next step is namespace separation. The original report checked the first-party namespaces and did not find a matching first-party telephony read. That is why `rule02` was phrased carefully: the risk surface is real, but the visible direct consumer is not first-party business logic. The actual telephony reads are in third-party code.
+
+JPush code in `cn.jiguang.bv.a` calls `TelephonyManager.getDeviceId()` and `getSubscriberId()`. The same file also pulls `Build.MODEL` and `Build.BRAND`. Umeng code in `DeviceConfig.java` contains `getIMEI`, multiple `getDeviceId` paths, and `getSubscriberId`. Umeng analytics code also pushes `Build.BRAND` and `Build.MODEL`. That is why `rule03`, `rule14`, and `rule15` remain confirmed.
+
+The original report kept a useful boundary here that should stay intact. The existence of these identifier calls supports a serious third-party collection surface, but it does not by itself prove the final network payload. That is why `rule77` stays `supported_hypothesis` even though the local code evidence is already strong.
+
+Boundary:
+This section is intentionally split between first-party and third-party. The original audit treated that distinction as important, and removing it would make the result less accurate, not more accurate.
+
+5. Health.
+Related rules: `rule18` is `confirmed`.
+Files:
+`app\xiangshan\resources\assets\apps\__UNI__2574FEC\www\app-config-service.js:5`
+`app\xiangshan\resources\assets\apps\__UNI__2574FEC\www\app-service.js:26`
+Chain:
+The route surface and the local model surface match each other closely. `app-config-service.js` includes shipped routes for body-fat measurement and reports, blood-pressure pages, blood-glucose pages, blood-uric-acid pages, heart-rate pages, baby measurement pages, height-meter pages, sports pages, diet pages, kitchen pages, water pages, member-profile pages, and device-management pages.
+
+The compiled business layer in `app-service.js` then mirrors that same scope in local state, local tables, and sync paths. The original material used both files together for a reason. The route file shows that the measurement families are part of real user-visible functionality, and the business file shows that the same functionality is tied to concrete data structures rather than just navigation labels.
+
+That is why `rule18` was kept confirmed. It is not based on app-store text or a product description. It is supported by actual shipped route names and actual local model names in the same package.
+
+Boundary:
+This section does not claim that every route was executed at runtime. The narrower point is that the package itself shows a broad health and lifestyle processing surface, and that point is already supported statically.
+
+6. Entry.
+Related rules: `rule32` is `confirmed`. `rule29`, `rule34`, `rule35`, `rule71`, and `rule72` stay `supported_hypothesis`.
+Files:
+`app\xiangshan\resources\AndroidManifest.xml:157-169`
+`app\xiangshan\sources\com\xs\smartlink\ui\MainActivity.java:263-279`
+`app\xiangshan\sources\com\hybirdlib\hybirdlib\wechat\WxUtils.java:45-50`
+`app\xiangshan\sources\com\hybirdlib\hybirdlib\wechat\WxUtils.java:79-80`
+`app\xiangshan\sources\com\hybirdlib\hybirdlib\SdkPluginUtils.java:489`
+`app\xiangshan\sources\com\hybirdlib\hybirdlib\SdkPluginUtils.java:1361-1369`
+Chain:
+The Manifest exposes `MainActivity` as a browsable deep-link entry with scheme `smartlink`. That confirms the custom-scheme entry itself and is enough for `rule32`.
+
+The data path begins in `MainActivity.onCreate()`. If the app receives a URI, it calls `getIntent().getData()`, extracts the query string, logs the query, puts that query into a map under the key `ext`, and then chooses one of two bridge paths.
+
+If `MyApp.a` is true, the app calls `WxUtils.instance.onJumpExtinfo(new Gson().toJson(map))`, starts `PandoraEntryActivity`, and finishes the current activity. If `MyApp.a` is false, the app calls `WxUtils.instance.onExtInfo(new Gson().toJson(map))` and then continues the normal initialization flow.
+
+`WxUtils` preserves the two branches. `onExtInfo(String str)` stores the string into `extinfo`. `onJumpExtinfo(String str)` immediately invokes the registered JS callback. `setonJumpExtinfo(...)` stores that callback for later.
+
+`SdkPluginUtils` completes the bridge. One callback case returns the stored `extinfo` value and clears it, and another case registers the `onJumpExtinfo` callback through `WxUtils.instance.setonJumpExtinfo(myUniJSCallback)`. The enum dispatch around `SdkEvent.onJumpExtinfo` is also present in the same class.
+
+That is enough to keep the deep-link follow-on rules as `supported_hypothesis`. The incoming external query becomes a native `ext` string and then reaches bridge-managed JS callback paths. What is still missing is one final static sink that proves a specific sensitive action, such as an account write, an API submission, or a device command, is driven by that incoming deep-link data.
+
+Boundary:
+The deep-link entry is confirmed. The deep-link abuse path is not. The original review kept that distinction, and it should stay exactly that way.
+
+7. BLE.
+Related rules: `rule49`, `rule50`, `rule51`, `rule53`, `rule54`, `rule55`, `rule61`, and `rule63` stay `supported_hypothesis`.
+Files:
+`app\xiangshan\sources\com\ss\bluetooth\sscore\XsBluetoothManager.java:124-125`
+`app\xiangshan\sources\com\ss\bluetooth\blecore\scans\BluetoothBaseAdapter.java:72-74`
+`app\xiangshan\sources\com\ss\bluetooth\blecore\scans\BluetoothBaseAdapter.java:126-139`
+`app\xiangshan\sources\com\ss\bluetooth\blecore\scans\BluetoothBaseAdapter.java:210-211`
+`app\xiangshan\sources\com\ss\bluetooth\blecore\scans\BluetoothBaseAdapter.java:271`
+`app\xiangshan\sources\com\ss\bluetooth\blecore\scans\BluetoothBaseAdapter.java:277-279`
+`app\xiangshan\sources\com\ss\bluetooth\blecore\scans\BluetoothBaseAdapter.java:317`
+`app\xiangshan\sources\com\ss\bluetooth\sscore\command\CommandUtils.java:90-96`
+`app\xiangshan\sources\com\ss\bluetooth\sscore\command\CommandUtils.java:103-110`
+`app\xiangshan\sources\com\ss\bluetooth\sscore\command\CommandUtils.java:138-162`
+`app\xiangshan\sources\com\ss\bluetooth\sscore\command\CommandUtils.java:277-292`
+`app\xiangshan\sources\com\ss\bluetooth\sscore\operation\body\BodyFatBLEOperation.java:36-43`
+`app\xiangshan\sources\com\ss\bluetooth\sscore\operation\body\BodyFatBLEOperation.java:98-105`
+`app\xiangshan\sources\com\ss\bluetooth\sscore\operation\body\BodyFatBLEOperation.java:200-207`
+`app\xiangshan\sources\com\ss\bluetooth\sscore\parse\scale\BodyParse.java:420-426`
+`app\xiangshan\sources\com\ss\bluetooth\sscore\parse\scale\BodyParse.java:478-486`
+`app\xiangshan\sources\com\ss\bluetooth\sscore\parse\scale\BodyParse.java:529-532`
+Chain:
+The BLE path begins with scanning. `XsBluetoothManager.startScan()` forwards to the discovery flow when the SDK is initialized.
+
+The connection path is then handled by `BluetoothBaseAdapter`. It uses `remoteDevice.connectGatt(...)`, looks for a fixed service UUID `0000fff0`, keeps a write characteristic under `0000fff2`, keeps a notify characteristic under `0000fff1`, and enables notifications with `setCharacteristicNotification(...)`.
+
+Once services are discovered and the descriptor write completes, the adapter marks the device connected and prepares a `BlePacketSender` around the selected write characteristic. The write path then uses `writeCharacteristic(...)` for short commands or the packet sender for longer ones.
+
+The incoming data path is also direct. `onCharacteristicChanged(...)` sends a JS callback string with `deviceId`, `serviceId`, `characteristicId`, and the full hex `value`. That means the native BLE receive path already crosses into the higher business layer without any visible app-layer provenance tag or authenticity result attached to the callback payload.
+
+The command surface is not small. `CommandUtils` builds heart-rate function toggles, Wi-Fi list requests, Wi-Fi configuration payloads, Wi-Fi OTA payloads, sync-date commands, baby-history sync commands, and body-history sync commands. `BodyFatBLEOperation` then uses those helper methods and sends the resulting commands for Wi-Fi configuration, Wi-Fi list retrieval, app bind, and OTA. This is why `rule51` stayed on the list in the original material.
+
+The parsing side is also direct. `BodyParse` reads fields such as `resistance`, `heartRate`, and `timestamp` from JSON, then assigns those values into body-measurement objects and timestamps without any obvious application-layer signature or provenance check in the visible path. That is the main reason `rule61` and `rule63` stayed in the original report.
+
+The BLE rules still stay below confirmed for one reason that the original review kept repeating correctly: there is no real device run, no sniffer capture, no replay test, no fake-device test, and no accepted forged measurement trace. The visible code path is serious, but it is still a static path.
+
+Boundary:
+I am not changing the original conservative line. The app-layer evidence is strong enough for `supported_hypothesis`, but not for confirmed exploitation or confirmed forgery acceptance.
+
+8. Components.
+Related rules: `rule01`, `rule04`, `rule24`, `rule36`, `rule37`, and `rule48` stay `supported_hypothesis`.
+Files:
+`app\xiangshan\sources\com\xs\smartlink\MyApp.java:16-25`
+`app\xiangshan\sources\com\xs\smartlink\ui\MainActivity.java:131-140`
+`app\xiangshan\sources\com\xs\smartlink\ui\MainActivity.java:196-205`
+`app\xiangshan\sources\com\xs\smartlink\ui\MainActivity.java:263`
+`app\xiangshan\resources\AndroidManifest.xml:63`
+`app\xiangshan\resources\AndroidManifest.xml:892-894`
+`app\xiangshan\resources\assets\apps\__UNI__2574FEC\www\app-service.js:26`
+Chain:
+The first part is the wide permission and environment surface. The Manifest includes `READ_PHONE_STATE`, and the original material also linked the package to a wider permission set than the first-party core health logic alone obviously requires. That is why `rule01` and `rule04` were kept, but only as `supported_hypothesis`.
+
+The second part is mixed consent and SDK initialization. `MyApp.onCreate()` calls `UMConfigure.preInit(...)` and `SdkPluginUtils.instance.init(this)` before the user-consent flow in `MainActivity` completes. At the same time, `MainActivity.onCreate()` explicitly calls `JCollectionAuth.setAuth(this, false)` before consent, and the later `uniHome()` path calls `JPushInterface.init(this)` and `JCollectionAuth.setAuth(this, true)` only after the agreement path continues. That combination is why the original report kept `rule36` and `rule37` below confirmed instead of flattening them into one simple statement.
+
+The provider surface is the third part. The Manifest exposes `cn.jpush.android.service.DownloadProvider` with `android:exported="true"`, and no read or write permission is attached to that provider entry in the checked file. That is why `rule24` stays on the list. The reason it stays below confirmed is that the current material still does not show a meaningful sensitive read or write path through that provider.
+
+The environment-routing part is the last piece. The base-URL block in `app-service.js` includes dev, test, and prod definitions for multiple hosts, with HTTP present on the dev and test side. That is real deployment surface, but it still does not prove a final production misuse path. So `rule48` stays exactly where the original audit left it.
+
+Boundary:
+This whole section is mixed by design. The evidence is real, but each part still lacks one final step that would justify a confirmed label.
+
+9. Cloud.
+Related rules: `rule76` is `confirmed`. `rule77` and `rule82` stay `supported_hypothesis`.
+Files:
+`app\xiangshan\resources\assets\apps\__UNI__2574FEC\www\app-service.js:26`
+`app\xiangshan\resources\assets\apps\__UNI__2574FEC\www\pages\nvue\member-points\web.js:37`
+`app\xiangshan\sources\cn\jiguang\bv\a.java:187`
+`app\xiangshan\sources\cn\jiguang\bv\a.java:203`
+`app\xiangshan\sources\com\umeng\commonsdk\statistics\common\DeviceConfig.java:626`
+`app\xiangshan\sources\com\umeng\commonsdk\statistics\common\DeviceConfig.java:738`
+Chain:
+The first-party upload side is already strong enough to confirm `rule76`. The local database section in `app-service.js` does not stop at table names. It also maps multiple local health and device tables to offline upload endpoints, and the original material connected that part to the shared request layer with authenticated request context. That is why the first-party upload path stays confirmed.
+
+The third-party upload side is one step weaker. JPush and Umeng code clearly read device identifiers and related device-profile values, and the accessible policy material also acknowledges SDK-side collection. That makes `rule77` serious, but it still does not prove one final outbound payload or one final recipient-side record from runtime evidence. So it stays `supported_hypothesis`.
+
+`rule82` sits in the middle. The local side already joins account, user, device, and measurement semantics, and the upload side already exists. What is still missing is one final serialized request body or packet sample that shows the full joined identity-device-measurement data in a single transmitted payload. That missing last step is exactly why the original report did not upgrade it.
+
+Boundary:
+I am keeping the same split as the original material: first-party upload structure is confirmed, while third-party outbound payload details and the full joined health-identity payload stay below confirmed.
+
+10. H5.
+Related rules: this section supports the token and cloud sections, but it was kept as a cross-layer note rather than a separate catalog rule.
+Files:
+`app\xiangshan\resources\assets\apps\__UNI__2574FEC\www\pages\nvue\member-points\web.js:37`
+`app\xiangshan\resources\assets\apps\__UNI__2574FEC\www\app-service.js:26`
+Chain:
+The member-points page builds a remote URL under `sharecn.senssun.com` or its test counterpart and includes a query object with `token`, `accountId`, status-bar height, version, window height, and page information. The token and account state come from the same base-store and account-store state that the earlier token section already described.
+
+This note matters because it shows that the app is not just sending token context to native APIs. It also hands that context into a remote web runtime. The original material kept an important nuance here: even if the final token position is after the hash fragment, the remote page JavaScript can still read it once the WebView loads that page.
+
+I am keeping this as a cross-layer note because that is how the original evidence treated it. It makes the token exposure surface wider, but it was not mapped to a separate catalog rule by itself.
+
+11. Extra.
+Related rules: none. This was kept in the original non-independent material as a separate observation, not as a catalog rule.
+Files:
+`app\xiangshan\sources\com\xs\smartlink\ui\MainActivity.java:216-223`
+Chain:
+`MainActivity.uniHome()` checks the external path `/storage/emulated/0/Android/data/com.xs.smartlink/files/app.zip`. If the file exists, the app deletes the current UNI resource directory under `/storage/emulated/0/Android/data/com.xs.smartlink/apps/__UNI__2574FEC/www/`, unzips the external archive into that directory, deletes the zip, and then continues into the UNI entry flow.
+
+This is not part of the rule catalog mapping in the original audit, so I am not forcing it into one of the numbered rules. It is still important because it shows that externally reachable app storage can replace the active UNI business resources.
+
+Boundary:
+I am leaving this where the original material left it: visible, important, but not disguised as a confirmed paper-derived rule.
+
+12. Boundary.
+The original review notes matter here because they explain what was deliberately not upgraded. TLS rules `rule09`, `rule10`, and `rule11` were not pushed higher. The package contains related third-party classes, but the checked material did not prove a live trust-all path. Content-provider rules `rule21`, `rule22`, and `rule23` also stayed out, and only `rule24` remained as `supported_hypothesis`.
+
+The deep-link section was also kept narrow on purpose. `rule32` only confirms the custom-scheme entry. The later deep-link rules stay below confirmed because the visible path reaches native `ext` handling and JS callback registration, but not one final sensitive sink.
+
+The privacy-policy rules `rule43` and `rule44` also stayed out. The accessible policy and SDK pages already disclose Bluetooth, device, location, and multiple third-party SDK channels, so the checked material did not support a strong omission claim.
+
+The runtime-only rules remain runtime-only. `rule05`, `rule64`, `rule65`, `rule66`, `rule67`, `rule68`, `rule69`, `rule70`, and `rule74` still need device-side data such as packet capture, logcat, runtime storage export, or a real interaction trace. I am not upgrading any of them without that missing evidence.
+

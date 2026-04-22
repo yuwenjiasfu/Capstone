@@ -1,0 +1,155 @@
+1. Hardcoded Mailchimp key and third-party contact path.
+Related rule: BR016.
+Status: confirmed.
+Files:
+`app\lightblue\sources\O5\a.java:137`
+`app\lightblue\sources\X5\C4736b.java:34`
+`app\lightblue\sources\X5\InterfaceC4737c.java:16`
+`app\lightblue\sources\X5\InterfaceC4737c.java:19`
+`app\lightblue\sources\A5\b.java:43`
+`app\lightblue\sources\A5\d.java:39-43`
+Step by step:
+The app wiring code initializes Mailchimp with the hardcoded key. The Mailchimp client builder points to the Mailchimp `clientapi/1.0` endpoint. The API interface exposes `contacts/events`. The same interface exposes `contacts`. The audience work request includes an email address. The contact builder adds Android, tablet, or phone tags.
+Basis:
+The key is in the package. The recipient and API surface are also visible. The app is not merely shipping an unused string.
+Limit:
+I am not claiming full Mailchimp account compromise. I am not claiming the key is equivalent to a user secret.
+
+2. Adafruit credential storage path.
+Related rule: BR026.
+Status: highly suspected.
+Files:
+`app\lightblue\sources\O5\a.java:40`
+`app\lightblue\sources\L5\a.java:2303-2304`
+`app\lightblue\sources\L5\a.java:2332`
+`app\lightblue\resources\com.punchthrough.lightblueexplorer.apk\AndroidManifest.xml`
+Step by step:
+The app creates the `app_preferences` store. The preference layer has explicit keys for Adafruit username and Adafruit secret key. The write method stores those values. I did not see an extra encryption wrapper around that storage. The manifest uses `allowBackup=false`, which is a helpful limit, but it does not convert the storage into encrypted storage.
+Limit:
+I did not extract a real device preference file. I do not know whether a given user ever configured Adafruit.
+
+3. BLE value to Adafruit bridge entry.
+Related rules: BR091, BR097, and BR098.
+Status: highly suspected.
+Files:
+`app\lightblue\sources\O5\a.java:72`
+`app\lightblue\sources\P5\a.java:56-66`
+`app\lightblue\sources\P5\b.java:28`
+`app\lightblue\sources\P5\f.java:235`
+`app\lightblue\sources\com\punchthrough\lightblueexplorer\ui\characteristicdetail\b.java:779-808`
+`app\lightblue\sources\com\punchthrough\lightblueexplorer\ui\characteristicdetail\b.java:964-972`
+`app\lightblue\sources\com\punchthrough\lightblueexplorer\ui\characteristicdetail\b.java:1324-1329`
+Step by step:
+The app sets the Retrofit base URL to Adafruit IO. The Retrofit interface defines the POST path for `{username}/feeds/{feedName}/data`. The Adafruit secret is sent in `x-aio-key`. The payload object is a single `value`. The characteristic detail page receives incoming bytes and stores them in the current view state. It checks whether the current characteristic UUID is already mapped for Adafruit. If there is a mapping, it calls `n0(byte[], UUID)`. `n0(...)` pulls the feed mapping and starts the upload coroutine. `l0(...)` is the path that binds the current characteristic to username, secret, type, and feed.
+Impact:
+This is not just a general cloud SDK in the package. It is a first-party UI and BLE path that can forward characteristic values to a third-party cloud.
+Limit:
+I did not observe a live POST request. I did not confirm a real feed configuration on disk. I did not confirm that the values in a given session were health data rather than generic BLE data.
+
+4. Read and notify values are both part of the same bridgeable path.
+Related rules: BR091, BR097, and BR098.
+Status: highly suspected.
+Files:
+`app\lightblue\sources\com\punchthrough\lightblueexplorer\ui\characteristicdetail\b.java:779-808`
+`app\lightblue\sources\com\punchthrough\lightblueexplorer\ui\characteristicdetail\b.java:813-823`
+`app\lightblue\sources\com\punchthrough\lightblueexplorer\ui\characteristicdetail\b.java:1017-1035`
+`app\lightblue\sources\J5\C1754d.java:332`
+`app\lightblue\sources\J5\C1754d.java:342`
+Code:
+`A(byte[])` records new value bytes and checks Adafruit mapping. `B(byte[])` records another incoming value path too. The page can also format bytes for manual write. The connection manager has explicit read and write paths. So the app can bridge both observed bytes and user-triggered bytes depending on context.
+Boundary:
+The presence of the bridge does not prove a real health-data upload event.
+
+5. Startup telemetry path.
+Related rule: BR092.
+Status: highly suspected.
+Files:
+`app\lightblue\sources\com\punchthrough\lightblueexplorer\common\App.java:99-107`
+`app\lightblue\sources\i5\d.java:18-21`
+`app\lightblue\sources\I5\a.java:27`
+`app\lightblue\sources\I5\a.java:45-51`
+`app\lightblue\sources\I5\a.java:57-60`
+`app\lightblue\sources\I5\a.java:69`
+`app\lightblue\sources\I5\a.java:81`
+`app\lightblue\resources\com.punchthrough.lightblueexplorer.apk\res\xml\preferences.xml:4-7`
+`app\lightblue\resources\com.punchthrough.lightblueexplorer.apk\AndroidManifest.xml:29`
+`app\lightblue\resources\com.punchthrough.lightblueexplorer.apk\AndroidManifest.xml:44`
+Step by step:
+`App.onCreate()` checks whether Firebase apps exist. If they do, it enables Firebase Analytics and Crashlytics. The analytics wrapper gets those instances. The event list includes refresh scan results, successful connection, failed connection, disconnection, characteristic read, characteristic write, share, and Adafruit cloud connect success. The preference file defaults `send_usage_data` to true. The manifest also requests ad-related identifier permissions.
+Limit:
+The exact timing relative to user choice still needs runtime observation. I did not capture traffic. I did not confirm Advertising ID collection from the first-party side.
+
+6. BLE logs inside the app.
+Related rule: BR047 supported. BR080 still not proven.
+Files:
+`app\lightblue\sources\K5\b.java:137-141`
+`app\lightblue\sources\J5\C1756f.java:49-67`
+`app\lightblue\sources\J5\C1754d.java:216-217`
+`app\lightblue\sources\J5\C1754d.java:294`
+`app\lightblue\sources\J5\C1754d.java:332`
+`app\lightblue\sources\J5\C1754d.java:342`
+`app\lightblue\sources\Q5\d.java:211`
+`app\lightblue\sources\d9\a.java:78`
+`app\lightblue\sources\d9\a.java:97`
+Step by step:
+The scan manager logs peripheral name and MAC address. The connection wrapper exposes address and name values. The connection manager logs bond changes. It logs connections. It logs writes with UUID and payload bytes. It logs reads. The log-event object renders the BLE value bytes as a string inside the final log object. There is also a `Log.println` sink in the logging tree.
+Boundary:
+The app definitely constructs sensitive BLE log messages. I still do not know the exact runtime logging configuration on a real device session.
+
+7. BLE app-layer trust model.
+Related rules: BR061, BR067, BR068, and BR075.
+Status: highly suspected.
+Files:
+`app\lightblue\sources\K5\b.java:227`
+`app\lightblue\sources\J5\C1756f.java:44`
+`app\lightblue\sources\J5\C1754d.java:332`
+`app\lightblue\sources\J5\C1754d.java:342`
+`app\lightblue\sources\J5\C1754d.java:378`
+`app\lightblue\sources\J5\C1754d.java:403`
+`app\lightblue\sources\com\punchthrough\lightblueexplorer\ui\characteristicdetail\b.java:1017-1035`
+Code:
+The app scans. It connects directly with `connectGatt(...)`. It performs read, write, and notification subscription operations based on characteristic properties and connection state. The characteristic page lets the user send arbitrary payload bytes to writable characteristics. I did not see a first-party app-level token, signature, or provenance layer around those operations.
+Limit:
+LightBlue is built to explore arbitrary BLE surfaces. Without a specific sensitive target device, I cannot say an unauthorized access event definitely happened.
+
+8. Health limits.
+Related rules: BR018 and BR097 style health inferences.
+Status: still too weak on static demo data alone.
+Files:
+`app\lightblue\resources\com.punchthrough.lightblueexplorer.apk\res\raw\sample_virtual_devices.json`
+`app\lightblue\sources\com\punchthrough\lightblueexplorer\ui\characteristicdetail\b.java`
+Boundary:
+The demo file shows heart rate, glucose, blood pressure, health thermometer, and location/navigation services. The BLE bridge path is real. But a demo file plus a generic bridge still does not prove real user medical data handling in a given run. That is why the report keeps those claims lower unless there is more concrete evidence.
+
+9. Provider, deep-link, and TLS boundaries.
+Low rules:
+BR006 to BR013 BR021 to BR024 BR029 to BR035
+Boundary:
+I did not find a first-party cleartext production endpoint. I did not find a first-party permissive TrustManager. I did not find a first-party always-true HostnameVerifier. The FileProvider is not exported. I did not find a BROWSABLE deep-link chain. These are exactly the kinds of claims that would become false positives if I pushed them higher.
+
+10. Timing.
+Related rules: BR076 and BR077 style timing claims.
+Status: not proven yet.
+Files:
+`app\lightblue\sources\com\punchthrough\lightblueexplorer\common\App.java:99-107`
+`app\lightblue\resources\com.punchthrough.lightblueexplorer.apk\res\xml\preferences.xml:4-7`
+`app\lightblue\sources\i5\d.java:18-21`
+Visible:
+Startup code enables Firebase pieces when the Firebase app list is present. The preference default for usage data is true. The analytics wrapper exists and is ready to log events.
+Missing:
+I did not observe the first-launch timeline. I did not check the state before the user touched the setting. I did not compare traffic before and after the preference was disabled. That is why the telemetry concern stays supported, but the exact consent-timing claim still needs runtime testing.
+
+11. Mailchimp recipient boundary.
+Related rules: BR016 confirmed. Third-party sharing timing still not proven.
+Files:
+`app\lightblue\sources\X5\C4736b.java:34`
+`app\lightblue\sources\X5\InterfaceC4737c.java:16`
+`app\lightblue\sources\X5\InterfaceC4737c.java:19`
+`app\lightblue\sources\A5\b.java:43`
+Recipient:
+The recipient is clearly Mailchimp, not Punch Through itself. The package can prepare contact work requests around email addresses. The API surface is clearly for contact creation and contact events.
+Missing:
+I did not run the newsletter path. I did not capture the actual payload. I did not compare this behavior with a privacy disclosure.
+
+
+
