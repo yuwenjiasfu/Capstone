@@ -1,3 +1,10 @@
+## Report
+
+The full report is available here:
+
+[**A Empirical Study of 15 Android BLE Health Applications: Comprehensive Findings Report**](./final_report.pdf)
+
+
 # Capstone Repository: Android Health / BLE App Security and Privacy Analysis
 
 ## Overview
